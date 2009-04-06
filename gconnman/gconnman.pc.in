@@ -1,0 +1,15 @@
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+datarootdir=@datarootdir@
+localedir=@localedir@
+
+Name: gconnman
+Description: glib based connman library
+Requires: 
+Version: @VERSION@
+Libs: -L${libdir} -lgconnman
+Cflags: -I${includedir}/gconnman
