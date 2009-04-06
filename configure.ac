@@ -33,7 +33,7 @@ AC_ARG_ENABLE([sample],
 		     sample=false, sample=true)
 
 if test "x$sample" = "xtrue"; then
-   PKG_CHECK_MODULES(SAMPLE, glib-2.0 gtk+-2.0 gobject-2.0)
+   PKG_CHECK_MODULES(SAMPLE, glib-2.0 gtk+-2.0 gobject-2.0 gthread-2.0)
    SAMPLE_CFLAGS="$GCONNMAN_CFLAGS $SAMPLE_CFLAGS"
    SAMPLE_LIBS="$GCONNMAN_LIBS $SAMPLE_LIBS"
    AC_SUBST(SAMPLE_CFLAGS)
