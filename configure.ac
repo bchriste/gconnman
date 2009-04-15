@@ -5,7 +5,7 @@ AC_PREREQ(2.61)
 # even micro numbers indicate released versions
 m4_define(gconnman_version_major, 0)
 m4_define(gconnman_version_minor, 1)
-m4_define(gconnman_version_micro, 5)
+m4_define(gconnman_version_micro, 6)
 
 m4_define([gconnman_version],
           [gconnman_version_major.gconnman_version_minor.gconnman_version_micro])
@@ -40,7 +40,7 @@ if test "x$sample" = "xtrue"; then
    AC_SUBST(SAMPLE_LIBS)
 fi
 
-GTK_DOC_CHECK([1.9])
+#GTK_DOC_CHECK([1.9])
 
 AM_CONDITIONAL([SAMPLE], [test "x$sample" = xtrue])
 #AM_COND_IF isn't deployed to the masses yet (it lands in aclocal-1.10.3)... 
@@ -51,10 +51,10 @@ AM_CONDITIONAL([SAMPLE], [test "x$sample" = xtrue])
 AC_OUTPUT([Makefile
           gconnman/Makefile
           gconnman/gconnman.pc
-	  doc/Makefile
-	  doc/reference/Makefile
 	  sample/Makefile
 	  ])
+#	  doc/Makefile
+#	  doc/reference/Makefile
 
 echo ""
 echo "   gconnman $VERSION"

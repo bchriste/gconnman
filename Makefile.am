@@ -1,9 +1,10 @@
 EXTRA_DIST = autogen.sh
-SUBDIRS = gconnman doc 
+#DISTCHECK_CONFIGURE_FLAGS=--enable-gtk-doc
+#SUBDIRS = gconnman doc 
+SUBDIRS = gconnman 
 if SAMPLE
 SUBDIRS += sample
 endif
-DISTCHECK_CONFIGURE_FLAGS=--enable-gtk-doc
 CLEANFILES = *~
 
 
