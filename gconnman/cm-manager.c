@@ -20,6 +20,7 @@ struct _CmManagerPrivate
 {
   DBusGConnection *connection;
   DBusGProxy *proxy;
+  gboolean offline_mode;
   GList *devices;
   GList *services;
 };
@@ -119,6 +120,12 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
       }
       priv->services = g_list_append (priv->services, service);
     }
+    return;
+  }
+
+  if (!strcmp ("OfflineMode", key))
+  {
+    priv->offline_mode = g_value_get_boolean (value);
     return;
   }
 
@@ -269,6 +276,42 @@ cm_manager_get_services (CmManager *manager)
 {
   CmManagerPrivate *priv = manager->priv;
   return g_list_copy (priv->services);
+}
+
+gboolean
+cm_manager_get_offline_mode (CmManager *manager)
+{
+  CmManagerPrivate *priv = manager->priv;
+  return priv->offline_mode;
+}
+
+void
+cm_manager_set_offline_mode (CmManager *manager, gboolean offline)
+{
+  CmManagerPrivate *priv = manager->priv;
+  priv->offline_mode = offline;
+}
+
+/*
+ * The list of services is sorted by connman so the active service
+ * should always be the first item in our list
+ */
+gchar *
+cm_manager_get_active_service_state (CmManager *manager)
+{
+  CmManagerPrivate *priv = manager->priv;
+  CmService *active = (CmService *)g_list_first (priv->services)->data;
+
+  return cm_service_get_state (active);
+}
+
+gchar *
+cm_manager_get_active_service_type (CmManager *manager)
+{
+  CmManagerPrivate *priv = manager->priv;
+  CmService *active = (CmService *)g_list_first (priv->services)->data;
+
+  return cm_service_get_type (active);
 }
 
 /*****************************************************************************

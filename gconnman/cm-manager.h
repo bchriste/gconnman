@@ -49,6 +49,11 @@ CmManager *cm_manager_new (GError **error);
 GList *cm_manager_get_devices (CmManager *manager);
 GList *cm_manager_get_services (CmManager *manager);
 gboolean cm_manager_refresh (CmManager *manager);
+void cm_manager_set_offline_mode (CmManager *manager, gboolean offline);
+gboolean cm_manager_get_offline_mode (CmManager *manager);
+gchar *cm_manager_get_active_service_state (CmManager *manager);
+gchar *cm_manager_get_active_service_type (CmManager *manager);
+
 
 G_END_DECLS
 
