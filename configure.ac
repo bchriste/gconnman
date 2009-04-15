@@ -28,7 +28,7 @@ AC_SUBST(GCONNMAN_CFLAGS)
 AC_SUBST(GCONNMAN_LIBS)
 
 AC_ARG_ENABLE([sample],
-      AS_HELP_STRING([--enable-sample], 
+      AS_HELP_STRING([--enable-sample],
                      [Build sample GTK application]),
 		     sample=false, sample=true)
 
@@ -43,8 +43,8 @@ fi
 #GTK_DOC_CHECK([1.9])
 
 AM_CONDITIONAL([SAMPLE], [test "x$sample" = xtrue])
-#AM_COND_IF isn't deployed to the masses yet (it lands in aclocal-1.10.3)... 
-# so we can't conditionally generate the sample/Makefile.  
+#AM_COND_IF isn't deployed to the masses yet (it lands in aclocal-1.10.3)...
+# so we can't conditionally generate the sample/Makefile.
 # Make it for everyone instead:
 #AM_COND_IF([SAMPLE], [AC_CONFIG_FILES([sample/Makefile])])
 

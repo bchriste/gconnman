@@ -1,7 +1,7 @@
 /*
  * ConnMan provides Device information across DBus with the following
  * returned via GetProperties:
- * 
+ *
  * Name          - user readable ASCIIZ text string
  * Scanning      - gboolean whether this device is in an active scan
  *
@@ -18,18 +18,18 @@
 #include "debug.h"
 #include "gconnman-internal.h"
 
-G_DEFINE_TYPE (Device, device, G_TYPE_OBJECT);
+G_DEFINE_TYPE (CmDevice, device, G_TYPE_OBJECT);
 #define DEVICE_ERROR device_error_quark ()
 
-#define DEVICE_GET_PRIVATE(obj)                         \
+#define CM_DEVICE_GET_PRIVATE(obj)                         \
   (G_TYPE_INSTANCE_GET_PRIVATE ((obj),                  \
-                                TYPE_DEVICE,            \
-                                DevicePrivate))
+                                CM_TYPE_DEVICE,            \
+                                CmDevicePrivate))
 
-struct _DevicePrivate
+struct _CmDevicePrivate
 {
   gchar *path;
-  DeviceType type;
+  CmDeviceType type;
   DBusGProxy *proxy;
   GList *networks;
   gboolean scanning;
@@ -57,22 +57,22 @@ enum
 
 static gint device_signals[SIGNAL_LAST];
 
-static GQuark 
+static GQuark
 device_error_quark (void)
 {
   return g_quark_from_static_string ("device-error-quark");
 }
 
 static void
-device_emit_updated (Device *device)
+device_emit_updated (CmDevice *device)
 {
   g_signal_emit (device, device_signals[SIGNAL_UPDATE], 0 /* detail */);
 }
 
 static void
-device_proxy_call_destroy (Device *device, DBusGProxyCall **proxy_call)
+device_proxy_call_destroy (CmDevice *device, DBusGProxyCall **proxy_call)
 {
-  DevicePrivate *priv = device->priv;
+  CmDevicePrivate *priv = device->priv;
   if (*proxy_call == NULL)
     return;
   dbus_g_proxy_cancel_call (priv->proxy, *proxy_call);
@@ -80,14 +80,14 @@ device_proxy_call_destroy (Device *device, DBusGProxyCall **proxy_call)
 }
 
 
-static Network *
-device_find_network (Device *device, const gchar *path)
+static CmNetwork *
+device_find_network (CmDevice *device, const gchar *path)
 {
-  DevicePrivate *priv = device->priv;
+  CmDevicePrivate *priv = device->priv;
   GList *tmp = priv->networks;
   while (tmp)
   {
-    Network *network = tmp->data;
+    CmNetwork *network = tmp->data;
     if (cm_network_is_same (network, path))
       return network;
     tmp = tmp->next;
@@ -96,9 +96,9 @@ device_find_network (Device *device, const gchar *path)
 }
 
 static void
-device_update_property (const gchar *key, GValue *value, Device *device)
+device_update_property (const gchar *key, GValue *value, CmDevice *device)
 {
-  DevicePrivate *priv = device->priv;
+  CmDevicePrivate *priv = device->priv;
   gchar *tmp;
 
   if (!strcmp ("Networks", key))
@@ -110,7 +110,7 @@ device_update_property (const gchar *key, GValue *value, Device *device)
     for (i = 0; i < networks->len; i++)
     {
       path = g_ptr_array_index (networks, i);
-      Network *network = device_find_network (device, path);
+      CmNetwork *network = device_find_network (device, path);
       if (!network)
       {
 	GError *error = NULL;
@@ -165,13 +165,13 @@ device_update_property (const gchar *key, GValue *value, Device *device)
       priv->type = DEVICE_ETHERNET;
     else
     {
-      g_print ("Unknown device type on %s: %s\n", 
+      g_print ("Unknown device type on %s: %s\n",
                cm_device_get_name (device), type);
       priv->type = DEVICE_UNKNOWN;
     }
     return;
   }
-  
+
   if (!strcmp ("Priority", key))
   {
     priv->priority = g_value_get_uchar (value);
@@ -197,9 +197,9 @@ device_update_property (const gchar *key, GValue *value, Device *device)
     priv->ipv4_method = g_strdup (g_value_get_string (value));
     return;
   }
-  
+
   tmp = g_strdup_value_contents (value);
-  g_print ("Unhandled property on %s: %s = %s\n", 
+  g_print ("Unhandled property on %s: %s = %s\n",
            cm_device_get_name (device), key, tmp);
   g_free (tmp);
 }
@@ -211,9 +211,9 @@ device_property_change_handler_proxy (DBusGProxy *proxy,
 				      GValue *value,
 				      gpointer data)
 {
-  Device *device = data;
+  CmDevice *device = data;
   gchar *tmp = g_strdup_value_contents (value);
-  g_print ("PropertyChange on %s: %s = %s\n", 
+  g_print ("PropertyChange on %s: %s = %s\n",
            cm_device_get_name (device), key, tmp);
   g_free (tmp);
 
@@ -227,8 +227,8 @@ device_get_properties_call_notify (DBusGProxy *proxy,
 				   DBusGProxyCall *call,
 				   gpointer data)
 {
-  Device *device = data;
-  DevicePrivate *priv = device->priv;
+  CmDevice *device = data;
+  CmDevicePrivate *priv = device->priv;
   GError *error = NULL;
   GHashTable *properties = NULL;
 
@@ -236,12 +236,12 @@ device_get_properties_call_notify (DBusGProxy *proxy,
     g_print ("%s Call mismatch!\n", __FUNCTION__);
 
   if (!dbus_g_proxy_end_call (
-	proxy, call, &error, 
+	proxy, call, &error,
 	/* OUT values */
-	dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE), 
+	dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE),
 	&properties, G_TYPE_INVALID))
   {
-    g_print ("Error calling dbus_g_proxy_end_call in %s: %s\n", 
+    g_print ("Error calling dbus_g_proxy_end_call in %s: %s\n",
              __FUNCTION__, error->message);
     g_clear_error (&error);
     return;
@@ -254,20 +254,20 @@ device_get_properties_call_notify (DBusGProxy *proxy,
   priv->get_properties_proxy_call = NULL;
 }
 
-Device *
+CmDevice *
 internal_device_new (DBusGProxy *proxy, const gchar *path, GError **error)
 {
-  Device *device;
-  DevicePrivate *priv;
+  CmDevice *device;
+  CmDevicePrivate *priv;
 
-  device = g_object_new (TYPE_DEVICE, NULL);
+  device = g_object_new (CM_TYPE_DEVICE, NULL);
   if (!device)
   {
     g_set_error (error, DEVICE_ERROR, DEVICE_ERROR_NO_MEMORY,
-                 "Unable to allocate Device.");
+                 "Unable to allocate CmDevice.");
     return NULL;
   }
-  
+
   priv = device->priv;
   priv->type = DEVICE_UNKNOWN;
 
@@ -279,7 +279,7 @@ internal_device_new (DBusGProxy *proxy, const gchar *path, GError **error)
     g_object_unref (device);
     return NULL;
   }
-  
+
   priv->proxy = dbus_g_proxy_new_from_proxy (
     proxy, CONNMAN_DEVICE_INTERFACE, path);
   if (!priv->proxy)
@@ -299,7 +299,7 @@ internal_device_new (DBusGProxy *proxy, const gchar *path, GError **error)
     priv->proxy, "PropertyChanged",
     G_CALLBACK (device_property_change_handler_proxy),
     device, NULL);
-  
+
   priv->get_properties_proxy_call = dbus_g_proxy_begin_call (
     priv->proxy, "GetProperties",
     device_get_properties_call_notify, device, NULL,
@@ -316,40 +316,40 @@ internal_device_new (DBusGProxy *proxy, const gchar *path, GError **error)
 }
 
 GList *
-cm_device_get_networks (Device *device)
+cm_device_get_networks (CmDevice *device)
 {
-  DevicePrivate *priv= device->priv;  
+  CmDevicePrivate *priv= device->priv;
   return g_list_copy (priv->networks);
 }
 
 const gchar *
-cm_device_get_path (Device *device)
+cm_device_get_path (CmDevice *device)
 {
-  DevicePrivate *priv= device->priv;  
+  CmDevicePrivate *priv= device->priv;
   return priv->path;
 }
 
-void 
-cm_device_print (const Device *device)
+void
+cm_device_print (const CmDevice *device)
 {
-  DevicePrivate *priv= device->priv;  
-  g_print ("%s: Scanning = %s, Networks = %d\n", 
+  CmDevicePrivate *priv= device->priv;
+  g_print ("%s: Scanning = %s, Networks = %d\n",
 	   cm_device_get_name (device), priv->scanning ? "TRUE" : "FALSE",
 	   g_list_length (priv->networks));
 }
 
 const gchar *
-cm_device_get_name (const Device *device)
+cm_device_get_name (const CmDevice *device)
 {
-  DevicePrivate *priv= device->priv;  
-  return priv->name ? priv->name : 
+  CmDevicePrivate *priv= device->priv;
+  return priv->name ? priv->name :
     (priv->iface ? priv->iface :priv->path);
 }
 
 gboolean
-cm_device_is_scanning (const Device *device)
+cm_device_is_scanning (const CmDevice *device)
 {
-  DevicePrivate *priv= device->priv;  
+  CmDevicePrivate *priv= device->priv;
   return priv->scanning;
 }
 
@@ -358,8 +358,8 @@ device_propose_scan_call_notify (DBusGProxy *proxy,
                                  DBusGProxyCall *call,
                                  gpointer data)
 {
-  Device *device = data;
-  DevicePrivate *priv= device->priv;  
+  CmDevice *device = data;
+  CmDevicePrivate *priv= device->priv;
   GError *error = NULL;
 
   if (priv->propose_scan_proxy_call != call)
@@ -369,18 +369,18 @@ device_propose_scan_call_notify (DBusGProxy *proxy,
 
   if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
   {
-    g_print ("Error calling dbus_g_proxy_end_call in %s: %s\n", 
+    g_print ("Error calling dbus_g_proxy_end_call in %s: %s\n",
              __FUNCTION__, error->message);
     g_clear_error (&error);
   }
 
-  ASYNC_DEBUG ("Device::ProposeScan invokation complete.\n");
+  ASYNC_DEBUG ("Device::ProposeScan invocation complete.\n");
 }
 
 gboolean
-cm_device_scan (Device *device)
+cm_device_scan (CmDevice *device)
 {
-  DevicePrivate *priv= device->priv;  
+  CmDevicePrivate *priv= device->priv;
   switch (priv->type)
   {
   case DEVICE_WIFI:
@@ -401,7 +401,7 @@ cm_device_scan (Device *device)
     return FALSE;
   }
 
-  ASYNC_DEBUG ("Device::ProposeScan invokation starting.\n");
+  ASYNC_DEBUG ("Device::ProposeScan invocation starting.\n");
 
   priv->propose_scan_proxy_call = dbus_g_proxy_begin_call (
     priv->proxy, "ProposeScan",
@@ -417,22 +417,34 @@ cm_device_scan (Device *device)
   return TRUE;
 }
 
-gboolean 
-cm_device_is_same (const Device *device, const gchar *path)
+gboolean
+cm_device_is_same (const CmDevice *device, const gchar *path)
 {
-  DevicePrivate *priv= device->priv;  
+  CmDevicePrivate *priv= device->priv;
   return !strcmp (priv->path, path);
 }
 
 
-DeviceType 
-cm_device_get_type (const Device *device)
+CmDeviceType
+cm_device_get_type (const CmDevice *device)
 {
-  DevicePrivate *priv= device->priv;  
+  CmDevicePrivate *priv = device->priv;
   return priv->type;
 }
 
+void
+cm_device_set_powered (const CmDevice *device, gboolean powered)
+{
+  CmDevicePrivate *priv = device->priv;
+  priv->powered = powered;
+}
 
+gboolean
+cm_device_get_powered (const CmDevice *device)
+{
+  CmDevicePrivate *priv = device->priv;
+  return priv->powered;
+}
 
 /*****************************************************************************
  *
@@ -445,8 +457,8 @@ cm_device_get_type (const Device *device)
 static void
 device_finalize (GObject *object)
 {
-  Device *device = DEVICE (object);
-  DevicePrivate *priv = device->priv;
+  CmDevice *device = CM_DEVICE (object);
+  CmDevicePrivate *priv = device->priv;
 
   dbus_g_proxy_disconnect_signal (
     priv->proxy, "PropertyChanged",
@@ -475,13 +487,13 @@ device_finalize (GObject *object)
 }
 
 static void
-device_init (Device *self)
+device_init (CmDevice *self)
 {
-  self->priv = DEVICE_GET_PRIVATE (self);
+  self->priv = CM_DEVICE_GET_PRIVATE (self);
 }
 
 static void
-device_class_init (DeviceClass *klass)
+device_class_init (CmDeviceClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
 
@@ -494,13 +506,13 @@ device_class_init (DeviceClass *klass)
     0,
     NULL, NULL,
     g_cclosure_marshal_VOID__VOID,
-    G_TYPE_NONE, 0); 
+    G_TYPE_NONE, 0);
 
-  g_type_class_add_private (gobject_class, sizeof (DevicePrivate));
+  g_type_class_add_private (gobject_class, sizeof (CmDevicePrivate));
 }
 
 const gchar *
-device_type_to_string (DeviceType type)
+device_type_to_string (CmDeviceType type)
 {
   switch (type)
   {

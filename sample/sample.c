@@ -9,7 +9,7 @@ struct _Sample
 {
   GtkWidget *window;
   GtkWidget *notebook;
-  Manager *manager;
+  CmManager *manager;
 
   gint general_index;
   GtkWidget *general_label;
@@ -24,7 +24,7 @@ struct _Sample
   GtkWidget *wifi_view;
 };
 
-static gboolean window_delete_event (GtkWidget *widget, GdkEvent *event, 
+static gboolean window_delete_event (GtkWidget *widget, GdkEvent *event,
                                      Sample *sample)
 {
   return FALSE;
@@ -44,9 +44,9 @@ static void window_destroy(GtkWidget *widget, Sample *sample)
  *
  */
 static void
-sample_device_update (Device *device, Sample *sample)
+sample_device_update (CmDevice *device, Sample *sample)
 {
-  DeviceType type = cm_device_get_type (device);
+  CmDeviceType type = cm_device_get_type (device);
 
   switch (type)
   {
@@ -59,7 +59,7 @@ sample_device_update (Device *device, Sample *sample)
     gtk_widget_show (sample->ethernet_view);
     gtk_widget_show (sample->ethernet_label);
     sample->ethernet_index = gtk_notebook_append_page (
-      GTK_NOTEBOOK (sample->notebook), 
+      GTK_NOTEBOOK (sample->notebook),
       sample->ethernet_view, sample->ethernet_label);
     break;
 
@@ -72,7 +72,7 @@ sample_device_update (Device *device, Sample *sample)
     gtk_widget_show (sample->wifi_view);
     gtk_widget_show (sample->wifi_label);
     sample->wifi_index = gtk_notebook_append_page (
-      GTK_NOTEBOOK (sample->notebook), 
+      GTK_NOTEBOOK (sample->notebook),
       sample->wifi_view, sample->wifi_label);
     break;
 
@@ -82,14 +82,14 @@ sample_device_update (Device *device, Sample *sample)
 }
 
 static void
-sample_manager_update (Manager *manager, Sample *sample)
+sample_manager_update (CmManager *manager, Sample *sample)
 {
   GList *devices;
 
   devices = cm_manager_get_devices (sample->manager);
   while (devices)
   {
-    Device *device = devices->data;
+    CmDevice *device = devices->data;
     g_signal_connect (G_OBJECT (devices->data), "device-updated",
                       G_CALLBACK (sample_device_update), sample);
     sample_device_update (device, sample);
@@ -129,18 +129,18 @@ int main (int argc, char *argv[])
   gtk_window_set_title (GTK_WINDOW (sample->window), "gconnman sample");
   gtk_widget_set_size_request (sample->window, 800, 480);
 
-  g_signal_connect (G_OBJECT (sample->window), "delete_event", 
+  g_signal_connect (G_OBJECT (sample->window), "delete_event",
                     G_CALLBACK (window_delete_event), NULL);
-  g_signal_connect (G_OBJECT (sample->window), "destroy", 
+  g_signal_connect (G_OBJECT (sample->window), "destroy",
                     G_CALLBACK (window_destroy), NULL);
 
   sample->notebook = gtk_notebook_new ();
-    
+
   sample->general_label = gtk_button_new_with_label ("General");
   sample->general_view = gtk_text_view_new ();
   gtk_text_view_set_editable (GTK_TEXT_VIEW (sample->general_view), FALSE);
   sample->general_index = gtk_notebook_append_page (
-    GTK_NOTEBOOK (sample->notebook), 
+    GTK_NOTEBOOK (sample->notebook),
     sample->general_view, sample->general_label);
   gtk_widget_show (sample->general_view);
   gtk_widget_show (sample->general_label);
@@ -153,14 +153,14 @@ int main (int argc, char *argv[])
                                  sample->general_index);
 
   gtk_container_add (GTK_CONTAINER (sample->window), sample->notebook);
-  
+
   gtk_widget_show (sample->notebook);
 
   sample->manager = cm_manager_new (&error);
 
   gtk_widget_show (sample->window);
 
-  gtk_main (); 
+  gtk_main ();
 
   g_object_unref (sample->manager);
   g_free (sample);

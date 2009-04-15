@@ -1,7 +1,7 @@
 /*
  * ConnMan provides WiFi Network information across DBus with the following
  * returned via GetProperties:
- * 
+ *
  * Name          - user readable ASCIIZ text string
  * WiFi.SSID     - {,32} byte binary SSID [ can contain embedded \0 ]
  * Strength      - int [unknown unit]
@@ -28,16 +28,16 @@
 #include "gconnman-internal.h"
 #include "debug.h"
 
-#define NETWORK_ERROR network_error_quark ()
+#define CM_NETWORK_ERROR network_error_quark ()
 
-G_DEFINE_TYPE (Network, network, G_TYPE_OBJECT);
+G_DEFINE_TYPE (CmNetwork, network, G_TYPE_OBJECT);
 
-#define NETWORK_GET_PRIVATE(obj)                                        \
-  (G_TYPE_INSTANCE_GET_PRIVATE ((obj), TYPE_NETWORK, NetworkPrivate))
+#define CM_NETWORK_GET_PRIVATE(obj)                                        \
+  (G_TYPE_INSTANCE_GET_PRIVATE ((obj), CM_TYPE_NETWORK, CmNetworkPrivate))
 
-struct _NetworkPrivate
+struct _CmNetworkPrivate
 {
-  Device *device;
+  CmDevice *device;
   gchar *path;
   DBusGProxy *proxy;
   guchar *ssid;
@@ -52,7 +52,7 @@ struct _NetworkPrivate
   gchar *mode;
   gchar *security;
   gchar *passphrase;
-  NetworkInfoMask flags;
+  CmNetworkInfoMask flags;
 
   gulong last_update;
 
@@ -73,20 +73,20 @@ enum
 
 static gint network_signals[SIGNAL_LAST];
 
-static GQuark 
+static GQuark
 network_error_quark (void)
 {
   return g_quark_from_static_string ("network-error-quark");
 }
 
 static void
-network_emit_updated (Network *network)
+network_emit_updated (CmNetwork *network)
 {
   g_signal_emit (network, network_signals[SIGNAL_UPDATE], 0 /* detail */);
 }
 
 
-static inline gulong network_timer_elapsed_ms(const struct timeval *t1, 
+static inline gulong network_timer_elapsed_ms(const struct timeval *t1,
                                               const struct timeval *t2)
 {
   return ((t2->tv_sec - t1->tv_sec) * 1000) +
@@ -114,20 +114,20 @@ network_printable_ssid_new (const guchar *ssid, int len)
 }
 
 static void
-network_update_timestamp (Network *network)
+network_update_timestamp (CmNetwork *network)
 {
-  NetworkPrivate *priv = network->priv;
+  CmNetworkPrivate *priv = network->priv;
   struct timeval now;
   gettimeofday (&now, NULL);
   priv->last_update = (now.tv_sec * 1000) + (now.tv_usec / 1000);
 }
 
-static void 
-network_update_property (const gchar *key, GValue *value, Network *network)
+static void
+network_update_property (const gchar *key, GValue *value, CmNetwork *network)
 {
-  NetworkPrivate *priv = network->priv;
+  CmNetworkPrivate *priv = network->priv;
   gchar *tmp;
-  
+
   network_update_timestamp (network);
 
   if (!strcmp ("WiFi.SSID", key))
@@ -155,7 +155,7 @@ network_update_property (const gchar *key, GValue *value, Network *network)
     priv->ssid_printable = network_printable_ssid_new (
       priv->ssid, priv->ssid_len);
     priv->flags |= NETWORK_INFO_SSID;
-  
+
     return;
   }
 
@@ -236,15 +236,15 @@ network_update_property (const gchar *key, GValue *value, Network *network)
   }
 
   tmp = g_strdup_value_contents (value);
-  g_print ("Unhandled property on %s: %s = %s\n", 
+  g_print ("Unhandled property on %s: %s = %s\n",
            cm_network_get_name (network), key, tmp);
   g_free (tmp);
 }
 
 void
-cm_network_print (const Network *network)
+cm_network_print (const CmNetwork *network)
 {
-  NetworkPrivate *priv = network->priv;
+  CmNetworkPrivate *priv = network->priv;
   static gint max = 20;
   gchar *tmp = g_strdup (cm_network_get_name (network));
   gint i;
@@ -259,7 +259,7 @@ cm_network_print (const Network *network)
     tmp[max] = '\0';
   }
 
-  g_print ("%-*s:%9s %9s %8s %5s %7s %8s %3d %3d\n", 
+  g_print ("%-*s:%9s %9s %8s %5s %7s %8s %3d %3d\n",
 	   max, tmp,
 	   priv->connected ? "CONNECTED" : "",
 	   priv->available ? "AVAILABLE" : "",
@@ -267,16 +267,16 @@ cm_network_print (const Network *network)
 	   priv->security  ? priv->security : "none",
 	   priv->passphrase  ? "<set>" : "<unset>",
 	   priv->mode      ? priv->mode : "managed",
-	   priv->strength, 
+	   priv->strength,
 	   priv->priority);
 
   g_free (tmp);
 }
 
 static void
-network_proxy_call_destroy (Network *network, DBusGProxyCall **proxy_call)
+network_proxy_call_destroy (CmNetwork *network, DBusGProxyCall **proxy_call)
 {
-  NetworkPrivate *priv = network->priv;
+  CmNetworkPrivate *priv = network->priv;
   if (*proxy_call == NULL)
     return;
   dbus_g_proxy_cancel_call (priv->proxy, *proxy_call);
@@ -290,9 +290,9 @@ network_property_change_handler_proxy (DBusGProxy *proxy,
 				       GValue *value,
 				       gpointer data)
 {
-  Network *network = data;
+  CmNetwork *network = data;
   gchar *tmp = g_strdup_value_contents (value);
-  g_print ("PropertyChange on %s: %s = %s\n", 
+  g_print ("PropertyChange on %s: %s = %s\n",
            cm_network_get_name (network), key, tmp);
   g_free (tmp);
   network_update_property (key, value, network);
@@ -304,8 +304,8 @@ network_get_properties_call_notify (DBusGProxy *proxy,
 				   DBusGProxyCall *call,
 				   gpointer data)
 {
-  Network *network = data;
-  NetworkPrivate *priv = network->priv;
+  CmNetwork *network = data;
+  CmNetworkPrivate *priv = network->priv;
   GError *error = NULL;
   GHashTable *properties = NULL;
   gint count;
@@ -317,12 +317,12 @@ network_get_properties_call_notify (DBusGProxy *proxy,
   priv->get_properties_proxy_call = NULL;
 
   if (!dbus_g_proxy_end_call (
-	proxy, call, &error, 
+	proxy, call, &error,
 	/* OUT values */
-	dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE), 
+	dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE),
 	&properties, G_TYPE_INVALID))
   {
-    g_print ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n", 
+    g_print ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
              __FUNCTION__, cm_network_get_name (network), error->message);
     g_clear_error (&error);
     return;
@@ -334,22 +334,22 @@ network_get_properties_call_notify (DBusGProxy *proxy,
   g_hash_table_unref (properties);
   network_emit_updated (network);
 
-  ASYNC_DEBUG ("Network::GetProperties invokation complete (%d properties).\n",
+  ASYNC_DEBUG ("Network::GetProperties invocation complete (%d properties).\n",
                count);
 }
 
-Network *
-internal_network_new (DBusGProxy *proxy, 
-	     Device *device, const gchar *path, GError **error)
+CmNetwork *
+internal_network_new (DBusGProxy *proxy,
+	     CmDevice *device, const gchar *path, GError **error)
 {
-  Network *network;
-  NetworkPrivate *priv;
+  CmNetwork *network;
+  CmNetworkPrivate *priv;
 
-  network = g_object_new (TYPE_NETWORK, NULL);
+  network = g_object_new (CM_TYPE_NETWORK, NULL);
   if (!network)
   {
     g_set_error (error, NETWORK_ERROR, NETWORK_ERROR_NO_MEMORY,
-                 "Unable to allocate Network.");
+                 "Unable to allocate CmNetwork.");
     return NULL;
   }
 
@@ -360,10 +360,10 @@ internal_network_new (DBusGProxy *proxy,
   if (!priv->path)
   {
     g_set_error (error, NETWORK_ERROR, NETWORK_ERROR_NO_MEMORY,
-                 "Unable to allocate Network.");
+                 "Unable to allocate CmNetwork.");
     return NULL;
   }
-  
+
   priv->proxy = dbus_g_proxy_new_from_proxy (
     proxy, CONNMAN_NETWORK_INTERFACE, path);
   if (!priv->proxy)
@@ -399,18 +399,18 @@ internal_network_new (DBusGProxy *proxy,
   return network;
 }
 
-gboolean 
-cm_network_is_connected (const Network *network)
+gboolean
+cm_network_is_connected (const CmNetwork *network)
 {
-  NetworkPrivate *priv = network->priv;
+  CmNetworkPrivate *priv = network->priv;
   return priv->connected;
 }
 
 const gchar *
-cm_network_get_name (const Network *network)
+cm_network_get_name (const CmNetwork *network)
 {
-  NetworkPrivate *priv = network->priv;
-  return priv->name ? priv->name : 
+  CmNetworkPrivate *priv = network->priv;
+  return priv->name ? priv->name :
     (priv->ssid_printable ? priv->ssid_printable : priv->path);
 }
 
@@ -419,18 +419,18 @@ network_disconnect_call_notify (DBusGProxy *proxy,
                                 DBusGProxyCall *call,
                                 gpointer data)
 {
-  Network *network = data;
-  NetworkPrivate *priv = network->priv;
+  CmNetwork *network = data;
+  CmNetworkPrivate *priv = network->priv;
   GError *error = NULL;
 
   if (priv->disconnect_proxy_call != call)
     g_print ("%s Call mismatch!\n", __FUNCTION__);
-  
+
   priv->disconnect_proxy_call = NULL;
 
   if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
   {
-    g_print ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n", 
+    g_print ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
              __FUNCTION__, cm_network_get_name (network), error->message);
     g_clear_error (&error);
   }
@@ -438,10 +438,10 @@ network_disconnect_call_notify (DBusGProxy *proxy,
   g_print ("%s:%s\n", __FUNCTION__, cm_network_get_name (network));
 }
 
-gboolean 
-cm_network_disconnect (Network *network)
+gboolean
+cm_network_disconnect (CmNetwork *network)
 {
-  NetworkPrivate *priv = network->priv;
+  CmNetworkPrivate *priv = network->priv;
   GError *error = NULL;
 
   g_print ("%s:%s\n", __FUNCTION__, cm_network_get_name (network));
@@ -465,7 +465,7 @@ cm_network_disconnect (Network *network)
     g_clear_error (&error);
     return FALSE;
   }
-  
+
   return TRUE;
 }
 
@@ -474,18 +474,18 @@ network_connect_call_notify (DBusGProxy *proxy,
                              DBusGProxyCall *call,
                              gpointer data)
 {
-  Network *network = data;
-  NetworkPrivate *priv = network->priv;
+  CmNetwork *network = data;
+  CmNetworkPrivate *priv = network->priv;
   GError *error = NULL;
 
   if (priv->connect_proxy_call != call)
     g_print ("%s Call mismatch!\n", __FUNCTION__);
-  
+
   priv->connect_proxy_call = NULL;
 
   if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
   {
-    g_print ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n", 
+    g_print ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
              __FUNCTION__, cm_network_get_name (network), error->message);
     g_clear_error (&error);
   }
@@ -493,10 +493,10 @@ network_connect_call_notify (DBusGProxy *proxy,
   g_print ("%s:%s\n", __FUNCTION__, cm_network_get_name (network));
 }
 
-gboolean 
-cm_network_connect (Network *network)
+gboolean
+cm_network_connect (CmNetwork *network)
 {
-  NetworkPrivate *priv = network->priv;
+  CmNetworkPrivate *priv = network->priv;
   GError *error = NULL;
 
   g_print ("%s:%s\n", __FUNCTION__, cm_network_get_name (network));
@@ -505,10 +505,10 @@ cm_network_connect (Network *network)
     return TRUE;
 
   network_proxy_call_destroy (network, &priv->disconnect_proxy_call);
-  
+
   if (cm_network_is_secure (network) && !cm_network_has_passphrase (network))
     return FALSE;
-  
+
   if (priv->connect_proxy_call)
     return FALSE;
 
@@ -522,60 +522,60 @@ cm_network_connect (Network *network)
     g_clear_error (&error);
     return FALSE;
   }
-  
+
   return TRUE;
 }
 
-gboolean 
-cm_network_is_same (const Network *network, const gchar *path)
+gboolean
+cm_network_is_same (const CmNetwork *network, const gchar *path)
 {
-  NetworkPrivate *priv = network->priv;
+  CmNetworkPrivate *priv = network->priv;
   return !strcmp (priv->path, path);
 }
 
 gboolean
-cm_network_is_available (const Network *network)
+cm_network_is_available (const CmNetwork *network)
 {
-  NetworkPrivate *priv = network->priv;
+  CmNetworkPrivate *priv = network->priv;
   return priv->available;
 }
 
 gulong
-cm_network_get_timestamp (const Network *network)
+cm_network_get_timestamp (const CmNetwork *network)
 {
-  NetworkPrivate *priv = network->priv;
+  CmNetworkPrivate *priv = network->priv;
   return priv->last_update;
 }
 
 gboolean
-cm_network_has_passphrase (const Network *network)
+cm_network_has_passphrase (const CmNetwork *network)
 {
-  NetworkPrivate *priv = network->priv;
+  CmNetworkPrivate *priv = network->priv;
   if (!(priv->flags & NETWORK_INFO_PASSPHRASE))
     return FALSE;
   return TRUE;
 }
 
 gboolean
-cm_network_is_secure (const Network *network)
+cm_network_is_secure (const CmNetwork *network)
 {
-  NetworkPrivate *priv = network->priv;
+  CmNetworkPrivate *priv = network->priv;
   if (!(priv->flags & NETWORK_INFO_SECURITY))
     return FALSE;
   return strcmp ("none", priv->security) ? 1 : 0;
 }
 
 guchar
-cm_network_get_strength (const Network *network)
+cm_network_get_strength (const CmNetwork *network)
 {
-  NetworkPrivate *priv = network->priv;
+  CmNetworkPrivate *priv = network->priv;
   return priv->strength;
 }
 
 guchar
-cm_network_get_priority (const Network *network)
+cm_network_get_priority (const CmNetwork *network)
 {
-  NetworkPrivate *priv = network->priv;
+  CmNetworkPrivate *priv = network->priv;
   return priv->priority;
 }
 
@@ -584,18 +584,18 @@ network_set_property_call_notify (DBusGProxy *proxy,
 				  DBusGProxyCall *call,
 				  gpointer data)
 {
-  Network *network = data;
-  NetworkPrivate *priv = network->priv;
+  CmNetwork *network = data;
+  CmNetworkPrivate *priv = network->priv;
   GError *error = NULL;
 
   if (priv->set_property_proxy_call != call)
     g_print ("%s Call mismatch!\n", __FUNCTION__);
-  
+
   priv->set_property_proxy_call = NULL;
 
   if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
   {
-    g_print ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n", 
+    g_print ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
              __FUNCTION__, cm_network_get_name (network), error->message);
     g_clear_error (&error);
   }
@@ -606,7 +606,7 @@ network_set_property_call_notify (DBusGProxy *proxy,
                              network);
     network_emit_updated (network);
   }
-  
+
   g_free (priv->pending_property_name);
   g_value_unset (&priv->pending_property_value);
   priv->pending_property_name = NULL;
@@ -615,9 +615,9 @@ network_set_property_call_notify (DBusGProxy *proxy,
 }
 
 gboolean
-cm_network_set_property (Network *network, const gchar *property, GValue *value)
+cm_network_set_property (CmNetwork *network, const gchar *property, GValue *value)
 {
-  NetworkPrivate *priv = network->priv;
+  CmNetworkPrivate *priv = network->priv;
   GError *error = NULL;
 
   g_print ("%s:%s\n", __FUNCTION__, cm_network_get_name (network));
@@ -642,12 +642,12 @@ cm_network_set_property (Network *network, const gchar *property, GValue *value)
     g_clear_error (&error);
     return FALSE;
   }
-  
+
   return TRUE;
 }
 
 gboolean
-cm_network_set_passphrase (Network *network, const gchar *passphrase)
+cm_network_set_passphrase (CmNetwork *network, const gchar *passphrase)
 {
   GValue value = { 0 };
   gboolean ret;
@@ -660,19 +660,19 @@ cm_network_set_passphrase (Network *network, const gchar *passphrase)
   return ret;
 }
 
-gint 
-cm_network_get_passphrase_length (const Network *network)
+gint
+cm_network_get_passphrase_length (const CmNetwork *network)
 {
-  NetworkPrivate *priv = network->priv;
+  CmNetworkPrivate *priv = network->priv;
   if (!cm_network_has_passphrase (network))
       return -1;
   return strlen (priv->passphrase);
 }
 
-Device *
-cm_network_get_device (Network *network)
+CmDevice *
+cm_network_get_device (CmNetwork *network)
 {
-  NetworkPrivate *priv = network->priv;
+  CmNetworkPrivate *priv = network->priv;
   return priv->device;
 }
 
@@ -688,8 +688,8 @@ cm_network_get_device (Network *network)
 static void
 network_dispose (GObject *object)
 {
-  Network *network = NETWORK (object);
-  NetworkPrivate *priv = network->priv;
+  CmNetwork *network = CM_NETWORK (object);
+  CmNetworkPrivate *priv = network->priv;
 
   dbus_g_proxy_disconnect_signal (
     priv->proxy, "PropertyChanged",
@@ -719,8 +719,8 @@ network_dispose (GObject *object)
 static void
 network_finalize (GObject *object)
 {
-  Network *network = NETWORK (object);
-  NetworkPrivate *priv = network->priv;
+  CmNetwork *network = CM_NETWORK (object);
+  CmNetworkPrivate *priv = network->priv;
 
   g_free (priv->name);
   g_free (priv->ssid);
@@ -734,13 +734,13 @@ network_finalize (GObject *object)
 }
 
 static void
-network_init (Network *self)
+network_init (CmNetwork *self)
 {
-  self->priv = NETWORK_GET_PRIVATE (self);
+  self->priv = CM_NETWORK_GET_PRIVATE (self);
 }
 
 static void
-network_class_init (NetworkClass *klass)
+network_class_init (CmNetworkClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
 
@@ -754,8 +754,8 @@ network_class_init (NetworkClass *klass)
     0,
     NULL, NULL,
     g_cclosure_marshal_VOID__VOID,
-    G_TYPE_NONE, 0); 
+    G_TYPE_NONE, 0);
 
-  g_type_class_add_private (gobject_class, sizeof (NetworkPrivate));
+  g_type_class_add_private (gobject_class, sizeof (CmNetworkPrivate));
 }
 

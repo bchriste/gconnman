@@ -8,9 +8,11 @@
 
 
 /* object management */
-Network *internal_network_new (DBusGProxy *proxy, Device *device, 
-                               const gchar *path, GError **error);
-Device *internal_device_new (DBusGProxy *proxy, const gchar *path, 
-                             GError **error);
+CmNetwork *internal_network_new (DBusGProxy *proxy, CmDevice *device,
+                                 const gchar *path, GError **error);
+CmDevice *internal_device_new (DBusGProxy *proxy, const gchar *path,
+                               GError **error);
+CmService *internal_service_new (DBusGProxy *proxy, const gchar *path,
+				 GError **error);
 
 #endif

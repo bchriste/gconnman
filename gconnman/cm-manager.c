@@ -7,20 +7,22 @@
 #include "connman-marshal.h"
 #include "gconnman-internal.h"
 
-G_DEFINE_TYPE (Manager, manager, G_TYPE_OBJECT);
+G_DEFINE_TYPE (CmManager, manager, G_TYPE_OBJECT);
 
 #define MANAGER_ERROR manager_error_quark ()
 
-#define MANAGER_GET_PRIVATE(obj)                        \
+#define CM_MANAGER_GET_PRIVATE(obj)                        \
   (G_TYPE_INSTANCE_GET_PRIVATE ((obj),                  \
-                                TYPE_MANAGER,           \
-                                ManagerPrivate))
+                                CM_TYPE_MANAGER,           \
+                                CmManagerPrivate))
 
-struct _ManagerPrivate
+struct _CmManagerPrivate
 {
   DBusGConnection *connection;
   DBusGProxy *proxy;
+  gboolean offline_mode;
   GList *devices;
+  GList *services;
 };
 
 static void manager_property_change_handler_proxy (DBusGProxy *, const gchar *,
@@ -34,19 +36,19 @@ enum
 static gint manager_signals[SIGNAL_LAST];
 
 static void
-manager_emit_updated (Manager *manager)
+manager_emit_updated (CmManager *manager)
 {
   g_signal_emit (manager, manager_signals[SIGNAL_UPDATE], 0 /* detail */);
 }
 
-static Device *
-manager_find_device (Manager *manager, const gchar *path)
+static CmDevice *
+manager_find_device (CmManager *manager, const gchar *path)
 {
-  ManagerPrivate *priv = manager->priv;
+  CmManagerPrivate *priv = manager->priv;
   GList *tmp = priv->devices;
   while (tmp)
   {
-    Device *device = tmp->data;
+    CmDevice *device = tmp->data;
     if (cm_device_is_same (device, path))
       return device;
     tmp = tmp->next;
@@ -55,9 +57,9 @@ manager_find_device (Manager *manager, const gchar *path)
 }
 
 static void
-manager_update_property (const gchar *key, GValue *value, Manager *manager)
+manager_update_property (const gchar *key, GValue *value, CmManager *manager)
 {
-  ManagerPrivate *priv = manager->priv;
+  CmManagerPrivate *priv = manager->priv;
   gchar *tmp;
 
   if (!strcmp ("Devices", key))
@@ -69,7 +71,7 @@ manager_update_property (const gchar *key, GValue *value, Manager *manager)
     for (i = 0; i < devices->len; i++)
     {
       path = g_ptr_array_index (devices, i);
-      Device *device = manager_find_device (manager, path);
+      CmDevice *device = manager_find_device (manager, path);
       if (!device)
       {
         GError *error = NULL;
@@ -88,16 +90,55 @@ manager_update_property (const gchar *key, GValue *value, Manager *manager)
     return;
   }
 
+  if (!strcmp ("Services", key))
+  {
+    GPtrArray *services = g_value_get_boxed (value);
+    gint i;
+    const gchar *path;
+    GError *error = NULL;
+
+    /* We are receiving a list which is potentially entirely different
+     * from what we have. Throw away the current list and create a new
+     * one from scratch.
+     */
+    while (priv->services)
+    {
+      g_object_unref (priv->services->data);
+      priv->services = g_list_delete_link (priv->services, priv->services);
+    }
+
+    for (i = 0; i < services->len; i++)
+    {
+      path = g_ptr_array_index (services, i);
+      CmService *service = internal_service_new (priv->proxy, path, &error);
+      if (!service)
+      {
+        g_print ("service_new failed in %s: %s\n", __FUNCTION__,
+			error->message);
+	g_clear_error (&error);
+	continue;
+      }
+      priv->services = g_list_append (priv->services, service);
+    }
+    return;
+  }
+
+  if (!strcmp ("OfflineMode", key))
+  {
+    priv->offline_mode = g_value_get_boolean (value);
+    return;
+  }
+
   tmp = g_strdup_value_contents (value);
-  g_print ("Unhandled property on Manager: %s = %s\n", 
+  g_print ("Unhandled property on Manager: %s = %s\n",
            key, tmp);
   g_free (tmp);
 }
 
-gboolean 
-cm_manager_refresh (Manager *manager)
+gboolean
+cm_manager_refresh (CmManager *manager)
 {
-  ManagerPrivate *priv = manager->priv;
+  CmManagerPrivate *priv = manager->priv;
   GError *error = NULL;
   GHashTable *properties = NULL;
 
@@ -118,12 +159,12 @@ cm_manager_refresh (Manager *manager)
     manager, NULL);
 
   /* Synchronous call for now... */
-  if (!dbus_g_proxy_call (priv->proxy, "GetProperties", &error, 
+  if (!dbus_g_proxy_call (priv->proxy, "GetProperties", &error,
 			  /* IN values */
 			  G_TYPE_INVALID,
 			  /* OUT values */
-			  dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, 
-					       G_TYPE_VALUE), 
+			  dbus_g_type_get_map ("GHashTable", G_TYPE_STRING,
+					       G_TYPE_VALUE),
 			  &properties, G_TYPE_INVALID))
     goto manager_refresh_error;
 
@@ -153,7 +194,7 @@ manager_property_change_handler_proxy (DBusGProxy *proxy,
 				      GValue *value,
 				      gpointer data)
 {
-  Manager *manager = data;
+  CmManager *manager = data;
   gchar *tmp = g_strdup_value_contents (value);
   g_print ("PropertyChange on Manager: %s = %s\n", key, tmp);
   g_free (tmp);
@@ -163,37 +204,37 @@ manager_property_change_handler_proxy (DBusGProxy *proxy,
   manager_emit_updated (manager);
 }
 
-static GQuark 
+static GQuark
 manager_error_quark (void)
 {
   return g_quark_from_static_string ("manager-error-quark");
 }
 
-gboolean 
-manager_set_dbus_connection (Manager *manager, GError **error)
+gboolean
+manager_set_dbus_connection (CmManager *manager, GError **error)
 {
   static gboolean dbus_init = FALSE;
-  ManagerPrivate *priv = manager->priv;
+  CmManagerPrivate *priv = manager->priv;
 
   if (!dbus_init)
   {
     dbus_init = TRUE;
     dbus_g_thread_init ();
 
-    /* Register the data types needed for marshalling the PropertyChanged 
+    /* Register the data types needed for marshalling the PropertyChanged
      * signal */
     dbus_g_object_register_marshaller (connman_marshal_VOID__STRING_BOXED,
                                        /* Return type */
-                                       G_TYPE_NONE, 
+                                       G_TYPE_NONE,
                                        /* Arguments */
                                        G_TYPE_STRING,
-                                       G_TYPE_VALUE, 
+                                       G_TYPE_VALUE,
                                        /* EOL */
                                        G_TYPE_INVALID);
   }
-  
+
   priv->connection = dbus_g_bus_get (DBUS_BUS_SYSTEM, error);
-  if (!priv->connection) 
+  if (!priv->connection)
     return FALSE;
 
   priv->proxy = dbus_g_proxy_new_for_name(
@@ -202,8 +243,8 @@ manager_set_dbus_connection (Manager *manager, GError **error)
   if (!priv->proxy)
   {
     g_set_error (error, MANAGER_ERROR, MANAGER_ERROR_NO_CONNMAN,
-                 "Unable to obtain proxy for %s:%s/%s", 
-                 CONNMAN_SERVICE, CONNMAN_MANAGER_PATH, 
+                 "Unable to obtain proxy for %s:%s/%s",
+                 CONNMAN_SERVICE, CONNMAN_MANAGER_PATH,
                  CONNMAN_MANAGER_INTERFACE);
     g_object_unref (priv->connection);
     priv->connection = NULL;
@@ -213,10 +254,10 @@ manager_set_dbus_connection (Manager *manager, GError **error)
   return TRUE;
 }
 
-Manager *
+CmManager *
 cm_manager_new (GError **error)
 {
-  Manager *manager = g_object_new (TYPE_MANAGER, NULL);
+  CmManager *manager = g_object_new (CM_TYPE_MANAGER, NULL);
   if (manager_set_dbus_connection (manager, error))
     return manager;
   g_object_unref (manager);
@@ -224,13 +265,54 @@ cm_manager_new (GError **error)
 }
 
 GList *
-cm_manager_get_devices (Manager *manager)
+cm_manager_get_devices (CmManager *manager)
 {
-  ManagerPrivate *priv = manager->priv;
+  CmManagerPrivate *priv = manager->priv;
   return g_list_copy (priv->devices);
 }
 
+GList *
+cm_manager_get_services (CmManager *manager)
+{
+  CmManagerPrivate *priv = manager->priv;
+  return g_list_copy (priv->services);
+}
 
+gboolean
+cm_manager_get_offline_mode (CmManager *manager)
+{
+  CmManagerPrivate *priv = manager->priv;
+  return priv->offline_mode;
+}
+
+void
+cm_manager_set_offline_mode (CmManager *manager, gboolean offline)
+{
+  CmManagerPrivate *priv = manager->priv;
+  priv->offline_mode = offline;
+}
+
+/*
+ * The list of services is sorted by connman so the active service
+ * should always be the first item in our list
+ */
+gchar *
+cm_manager_get_active_service_state (CmManager *manager)
+{
+  CmManagerPrivate *priv = manager->priv;
+  CmService *active = (CmService *)g_list_first (priv->services)->data;
+
+  return cm_service_get_state (active);
+}
+
+gchar *
+cm_manager_get_active_service_type (CmManager *manager)
+{
+  CmManagerPrivate *priv = manager->priv;
+  CmService *active = (CmService *)g_list_first (priv->services)->data;
+
+  return cm_service_get_type (active);
+}
 
 /*****************************************************************************
  *
@@ -243,8 +325,8 @@ cm_manager_get_devices (Manager *manager)
 static void
 manager_finalize (GObject *object)
 {
-  Manager *manager = MANAGER (object);
-  ManagerPrivate *priv = manager->priv;
+  CmManager *manager = CM_MANAGER (object);
+  CmManagerPrivate *priv = manager->priv;
 
   dbus_g_proxy_disconnect_signal (
     priv->proxy, "PropertyChanged",
@@ -267,13 +349,13 @@ manager_finalize (GObject *object)
 }
 
 static void
-manager_init (Manager *self)
+manager_init (CmManager *self)
 {
-  self->priv = MANAGER_GET_PRIVATE (self);
+  self->priv = CM_MANAGER_GET_PRIVATE (self);
 }
 
 static void
-manager_class_init (ManagerClass *klass)
+manager_class_init (CmManagerClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
 
@@ -286,8 +368,8 @@ manager_class_init (ManagerClass *klass)
     0,
     NULL, NULL,
     g_cclosure_marshal_VOID__VOID,
-    G_TYPE_NONE, 0); 
+    G_TYPE_NONE, 0);
 
-  g_type_class_add_private (gobject_class, sizeof (ManagerPrivate));
+  g_type_class_add_private (gobject_class, sizeof (CmManagerPrivate));
 }
 
