@@ -47,6 +47,7 @@ typedef enum
 
 CmManager *cm_manager_new (GError **error);
 GList *cm_manager_get_devices (CmManager *manager);
+GList *cm_manager_get_services (CmManager *manager);
 gboolean cm_manager_refresh (CmManager *manager);
 
 G_END_DECLS

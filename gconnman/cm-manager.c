@@ -21,6 +21,7 @@ struct _CmManagerPrivate
   DBusGConnection *connection;
   DBusGProxy *proxy;
   GList *devices;
+  GList *services;
 };
 
 static void manager_property_change_handler_proxy (DBusGProxy *, const gchar *,
@@ -84,6 +85,39 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
 	}
 	priv->devices = g_list_append (priv->devices, device);
       }
+    }
+    return;
+  }
+
+  if (!strcmp ("Services", key))
+  {
+    GPtrArray *services = g_value_get_boxed (value);
+    gint i;
+    const gchar *path;
+    GError *error = NULL;
+
+    /* We are receiving a list which is potentially entirely different
+     * from what we have. Throw away the current list and create a new
+     * one from scratch.
+     */
+    while (priv->services)
+    {
+      g_object_unref (priv->services->data);
+      priv->services = g_list_delete_link (priv->services, priv->services);
+    }
+
+    for (i = 0; i < services->len; i++)
+    {
+      path = g_ptr_array_index (services, i);
+      CmService *service = internal_service_new (priv->proxy, path, &error);
+      if (!service)
+      {
+        g_print ("service_new failed in %s: %s\n", __FUNCTION__,
+			error->message);
+	g_clear_error (&error);
+	continue;
+      }
+      priv->services = g_list_append (priv->services, service);
     }
     return;
   }
@@ -230,7 +264,12 @@ cm_manager_get_devices (CmManager *manager)
   return g_list_copy (priv->devices);
 }
 
-
+GList *
+cm_manager_get_services (CmManager *manager)
+{
+  CmManagerPrivate *priv = manager->priv;
+  return g_list_copy (priv->services);
+}
 
 /*****************************************************************************
  *
