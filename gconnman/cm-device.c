@@ -428,11 +428,23 @@ cm_device_is_same (const CmDevice *device, const gchar *path)
 CmDeviceType
 cm_device_get_type (const CmDevice *device)
 {
-  CmDevicePrivate *priv= device->priv;
+  CmDevicePrivate *priv = device->priv;
   return priv->type;
 }
 
+void
+cm_device_set_powered (const CmDevice *device, gboolean powered)
+{
+  CmDevicePrivate *priv = device->priv;
+  priv->powered = powered;
+}
 
+gboolean
+cm_device_get_powered (const CmDevice *device)
+{
+  CmDevicePrivate *priv = device->priv;
+  return priv->powered;
+}
 
 /*****************************************************************************
  *
