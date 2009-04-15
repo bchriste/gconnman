@@ -374,7 +374,7 @@ device_propose_scan_call_notify (DBusGProxy *proxy,
     g_clear_error (&error);
   }
 
-  ASYNC_DEBUG ("Device::ProposeScan invokation complete.\n");
+  ASYNC_DEBUG ("Device::ProposeScan invocation complete.\n");
 }
 
 gboolean
@@ -401,7 +401,7 @@ cm_device_scan (CmDevice *device)
     return FALSE;
   }
 
-  ASYNC_DEBUG ("Device::ProposeScan invokation starting.\n");
+  ASYNC_DEBUG ("Device::ProposeScan invocation starting.\n");
 
   priv->propose_scan_proxy_call = dbus_g_proxy_begin_call (
     priv->proxy, "ProposeScan",

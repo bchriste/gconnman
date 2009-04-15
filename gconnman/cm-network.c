@@ -334,7 +334,7 @@ network_get_properties_call_notify (DBusGProxy *proxy,
   g_hash_table_unref (properties);
   network_emit_updated (network);
 
-  ASYNC_DEBUG ("Network::GetProperties invokation complete (%d properties).\n",
+  ASYNC_DEBUG ("Network::GetProperties invocation complete (%d properties).\n",
                count);
 }
 
