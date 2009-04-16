@@ -512,7 +512,7 @@ device_class_init (CmDeviceClass *klass)
 }
 
 const gchar *
-device_type_to_string (CmDeviceType type)
+cm_device_type_to_string (CmDeviceType type)
 {
   switch (type)
   {
