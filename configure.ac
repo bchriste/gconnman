@@ -28,11 +28,14 @@ AC_SUBST(GCONNMAN_CFLAGS)
 AC_SUBST(GCONNMAN_LIBS)
 
 AC_ARG_ENABLE([sample],
-      AS_HELP_STRING([--enable-sample],
-                     [Build sample GTK application]),
-		     sample=false, sample=true)
+      AS_HELP_STRING([--enable-sample], [Build sample GTK application]),
+      [ if test "$enableval" = no; then
+	  sample=no
+	else
+	  sample=yes
+	fi], [sample=no])
 
-if test "x$sample" = "xtrue"; then
+if test "x$sample" = "xyes"; then
    PKG_CHECK_MODULES(SAMPLE, glib-2.0 gtk+-2.0 gobject-2.0 gthread-2.0)
    SAMPLE_CFLAGS="$GCONNMAN_CFLAGS $SAMPLE_CFLAGS"
    SAMPLE_LIBS="$GCONNMAN_LIBS $SAMPLE_LIBS"
@@ -42,7 +45,7 @@ fi
 
 #GTK_DOC_CHECK([1.9])
 
-AM_CONDITIONAL([SAMPLE], [test "x$sample" = xtrue])
+AM_CONDITIONAL([SAMPLE], [test "x$sample" = "xyes"])
 #AM_COND_IF isn't deployed to the masses yet (it lands in aclocal-1.10.3)...
 # so we can't conditionally generate the sample/Makefile.
 # Make it for everyone instead:
