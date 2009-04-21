@@ -219,6 +219,7 @@ manager_set_dbus_connection (CmManager *manager, GError **error)
   if (!dbus_init)
   {
     dbus_init = TRUE;
+    g_thread_init (NULL);
     dbus_g_thread_init ();
 
     /* Register the data types needed for marshalling the PropertyChanged
