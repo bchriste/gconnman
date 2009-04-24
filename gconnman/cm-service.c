@@ -17,13 +17,16 @@ G_DEFINE_TYPE (CmService, service, G_TYPE_OBJECT);
 struct _CmServicePrivate
 {
   DBusGProxy *proxy;
+
   gchar *state;
   gchar *name;
   gchar *type;
   gchar *mode;
   gchar *security;
+  gchar *passphrase;
   uint strength;
   gboolean favorite;
+
   gboolean connected;
   CmServiceInfoMask flags;
 
@@ -74,7 +77,7 @@ service_update_property (const gchar *key, GValue *value, CmService *service)
     priv->flags |= SERVICE_INFO_STATE;
     if (!strcmp ("ready", priv->state))
     {
-	priv->connected = TRUE;
+      priv->connected = TRUE;
     }
     else
     {
@@ -113,6 +116,14 @@ service_update_property (const gchar *key, GValue *value, CmService *service)
     g_free (priv->security);
     priv->security = g_strdup (g_value_get_string (value));
     priv->flags |= SERVICE_INFO_SECURITY;
+    return;
+  }
+
+  if (!strcmp ("Passphrase", key))
+  {
+    g_free (priv->passphrase);
+    priv->passphrase = g_strdup (g_value_get_string (value));
+    priv->flags |= SERVICE_INFO_PASSPHRASE;
     return;
   }
 
@@ -252,6 +263,14 @@ internal_service_new (DBusGProxy *proxy, const gchar *path, GError **error)
   return service;
 }
 
+/* Property getters/setters */
+const gchar *
+cm_service_get_state (CmService *service)
+{
+  CmServicePrivate *priv = service->priv;
+  return priv->state;
+}
+
 const gchar *
 cm_service_get_name (const CmService *service)
 {
@@ -259,14 +278,45 @@ cm_service_get_name (const CmService *service)
   return priv->name;
 }
 
-char *
-cm_service_get_state (CmService *service)
+const gchar *
+cm_service_get_mode (CmService *service)
 {
   CmServicePrivate *priv = service->priv;
-  return priv->state;
+  return priv->mode;
 }
 
-char *
+const gchar *
+cm_service_get_security (CmService *service)
+{
+  CmServicePrivate *priv = service->priv;
+  return priv->security;
+}
+
+const gchar *
+cm_service_get_passphrase (CmService *service)
+{
+  CmServicePrivate *priv = service->priv;
+  return priv->passphrase;
+}
+
+gboolean
+cm_service_set_passphrase (CmService *service, const gchar *passphrase)
+{
+  GValue value = { 0 };
+  gboolean ret;
+
+  g_print ("Setting passphrase for %s to %s\n", cm_service_get_name (service),
+           passphrase);
+
+  g_value_init (&value, G_TYPE_STRING);
+  g_value_set_static_string (&value, passphrase);
+  ret = cm_service_set_property (service, "Passphrase", &value);
+  g_value_unset (&value);
+
+  return ret;
+}
+
+const char *
 cm_service_get_type (CmService *service)
 {
   CmServicePrivate *priv = service->priv;
@@ -278,6 +328,13 @@ cm_service_get_strength (CmService *service)
 {
   CmServicePrivate *priv = service->priv;
   return priv->strength;
+}
+
+gboolean
+cm_service_get_favorite (CmService *service)
+{
+  CmServicePrivate *priv = service->priv;
+  return priv->favorite;
 }
 
 static void

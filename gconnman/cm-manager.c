@@ -300,7 +300,7 @@ cm_manager_set_offline_mode (CmManager *manager, gboolean offline)
  * The list of services is sorted by connman so the active service
  * should always be the first item in our list
  */
-gchar *
+const gchar *
 cm_manager_get_active_service_state (CmManager *manager)
 {
   CmManagerPrivate *priv = manager->priv;
@@ -309,12 +309,12 @@ cm_manager_get_active_service_state (CmManager *manager)
   return cm_service_get_state (active);
 }
 
-gchar *
+const gchar *
 cm_manager_get_active_service_name (CmManager *manager)
 {
   CmManagerPrivate *priv = manager->priv;
   CmService *active = (CmService *)g_list_first (priv->services)->data;
-  gchar *name = cm_service_get_name (active);
+  const gchar *name = cm_service_get_name (active);
   if (!name)
   {
     name = cm_service_get_type (active);
@@ -323,7 +323,7 @@ cm_manager_get_active_service_name (CmManager *manager)
   return name;
 }
 
-gchar *
+const gchar *
 cm_manager_get_active_service_type (CmManager *manager)
 {
   CmManagerPrivate *priv = manager->priv;

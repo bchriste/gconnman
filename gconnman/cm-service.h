@@ -53,8 +53,9 @@ typedef enum
   SERVICE_INFO_TYPE	  = 1 << 2,
   SERVICE_INFO_MODE       = 1 << 3,
   SERVICE_INFO_SECURITY   = 1 << 4,
-  SERVICE_INFO_STRENGTH   = 1 << 5,
-  SERVICE_INFO_FAVORITE   = 1 << 6,
+  SERVICE_INFO_PASSPHRASE = 1 << 5,
+  SERVICE_INFO_STRENGTH   = 1 << 6,
+  SERVICE_INFO_FAVORITE   = 1 << 7,
 } CmServiceInfoMask;
 
 /* debug */
@@ -65,9 +66,15 @@ gboolean cm_service_connect (CmService *service);
 gboolean cm_service_disconnect (CmService *service);
 
 /* const getters */
+const gchar *cm_service_get_state (CmService *service);
 const gchar *cm_service_get_name (const CmService *service);
-gchar *cm_service_get_state (CmService *service);
-gchar *cm_service_get_type (CmService *service);
+const gchar *cm_service_get_type (CmService *service);
+const gchar *cm_service_get_mode (CmService *service);
+const gchar *cm_service_get_security (CmService *service);
+const gchar *cm_service_get_passphrase (CmService *service);
 guint cm_service_get_strength (CmService *service);
+gboolean cm_service_get_favorite (CmService *service);
+
+gboolean cm_service_set_passphrase (CmService *service, const char* passphrase);
 
 #endif
