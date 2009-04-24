@@ -310,6 +310,20 @@ cm_manager_get_active_service_state (CmManager *manager)
 }
 
 gchar *
+cm_manager_get_active_service_name (CmManager *manager)
+{
+  CmManagerPrivate *priv = manager->priv;
+  CmService *active = (CmService *)g_list_first (priv->services)->data;
+  gchar *name = cm_service_get_name (active);
+  if (!name)
+  {
+    name = cm_service_get_type (active);
+  }
+
+  return name;
+}
+
+gchar *
 cm_manager_get_active_service_type (CmManager *manager)
 {
   CmManagerPrivate *priv = manager->priv;

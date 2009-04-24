@@ -53,6 +53,7 @@ void cm_manager_set_offline_mode (CmManager *manager, gboolean offline);
 gboolean cm_manager_get_offline_mode (CmManager *manager);
 gchar *cm_manager_get_active_service_state (CmManager *manager);
 gchar *cm_manager_get_active_service_type (CmManager *manager);
+gchar *cm_manager_get_active_service_name (CmManager *manager);
 
 
 G_END_DECLS
