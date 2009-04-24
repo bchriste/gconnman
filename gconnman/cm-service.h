@@ -64,6 +64,8 @@ void cm_service_print (const CmService *service);
 /* methods */
 gboolean cm_service_connect (CmService *service);
 gboolean cm_service_disconnect (CmService *service);
+gboolean cm_service_move_before (CmService *service, const gchar *before_path);
+gboolean cm_service_move_after (CmService *service, const gchar *after_path);
 
 /* const getters */
 const gchar *cm_service_get_state (CmService *service);
@@ -74,6 +76,7 @@ const gchar *cm_service_get_security (CmService *service);
 const gchar *cm_service_get_passphrase (CmService *service);
 guint cm_service_get_strength (CmService *service);
 gboolean cm_service_get_favorite (CmService *service);
+const gchar *cm_service_get_object_path (CmService *service);
 
 gboolean cm_service_set_passphrase (CmService *service, const char* passphrase);
 

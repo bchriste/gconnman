@@ -350,6 +350,14 @@ cm_service_get_favorite (CmService *service)
   return priv->favorite;
 }
 
+const gchar *
+cm_service_get_object_path (CmService *service)
+{
+  CmServicePrivate *priv = service->priv;
+
+  return dbus_g_proxy_get_path (priv->proxy);
+}
+
 static void
 service_disconnect_call_notify (DBusGProxy *proxy,
                                 DBusGProxyCall *call,
