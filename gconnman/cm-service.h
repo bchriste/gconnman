@@ -64,8 +64,8 @@ void cm_service_print (const CmService *service);
 /* methods */
 gboolean cm_service_connect (CmService *service);
 gboolean cm_service_disconnect (CmService *service);
-gboolean cm_service_move_before (CmService *service, const gchar *before_path);
-gboolean cm_service_move_after (CmService *service, const gchar *after_path);
+gboolean cm_service_move_before (CmService *service, CmService *before);
+gboolean cm_service_move_after (CmService *service, CmService *after);
 
 /* const getters */
 const gchar *cm_service_get_state (CmService *service);

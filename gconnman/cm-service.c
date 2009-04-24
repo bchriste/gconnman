@@ -36,6 +36,8 @@ struct _CmServicePrivate
   DBusGProxyCall *connect_proxy_call;
   DBusGProxyCall *disconnect_proxy_call;
   DBusGProxyCall *set_property_proxy_call;
+  DBusGProxyCall *move_before_proxy_call;
+  DBusGProxyCall *move_after_proxy_call;
 
   GValue pending_property_value;
   gchar *pending_property_name;
@@ -526,6 +528,112 @@ cm_service_set_property (CmService *service, const gchar *property, GValue *valu
   if (!priv->set_property_proxy_call)
   {
     g_print ("SetProperty failed: %s\n", error ? error->message : "Unknown");
+    g_clear_error (&error);
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+static void
+service_move_before_call_notify (DBusGProxy *proxy, DBusGProxyCall *call,
+                                 gpointer data)
+{
+  CmService *service = data;
+  CmServicePrivate *priv = service->priv;
+  GError *error = NULL;
+
+  if (priv->move_before_proxy_call != call)
+    g_print ("%s call mismatch!\n", __FUNCTION__);
+
+  priv->move_before_proxy_call = NULL;
+
+  if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
+  {
+    g_print ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
+             __FUNCTION__, cm_service_get_name (service), error->message);
+    g_clear_error (&error);
+  }
+
+  g_print ("%s:%s\n", __FUNCTION__, cm_service_get_name (service));
+}
+
+gboolean
+cm_service_move_before (CmService *service, CmService *before)
+{
+  CmServicePrivate *priv = service->priv;
+  GError *error = NULL;
+  const gchar *path = cm_service_get_object_path (before);
+
+  g_print ("%s:%s\n", __FUNCTION__, cm_service_get_name (service));
+
+  service_proxy_call_destroy (service, &priv->move_after_proxy_call);
+
+  if (priv->move_after_proxy_call)
+    return FALSE;
+
+  priv->move_before_proxy_call = dbus_g_proxy_begin_call
+    (priv->proxy, "MoveBefore",
+     service_move_before_call_notify, service, NULL,
+     G_TYPE_STRING, path,
+     G_TYPE_INVALID);
+
+  if (!priv->move_before_proxy_call)
+  {
+    g_print ("MoveBefore failed: %s\n", error ? error->message : "Unknown");
+    g_clear_error (&error);
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+static void
+service_move_after_call_notify (DBusGProxy *proxy, DBusGProxyCall *call,
+                                   gpointer data)
+{
+  CmService *service = data;
+  CmServicePrivate *priv = service->priv;
+  GError *error = NULL;
+
+  if (priv->move_after_proxy_call != call)
+    g_print ("%s call mismatch!\n", __FUNCTION__);
+
+  priv->move_after_proxy_call = NULL;
+
+  if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
+  {
+    g_print ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
+             __FUNCTION__, cm_service_get_name (service), error->message);
+    g_clear_error (&error);
+  }
+
+  g_print ("%s:%s\n", __FUNCTION__, cm_service_get_name (service));
+}
+
+gboolean
+cm_service_move_after (CmService *service, CmService *after)
+{
+  CmServicePrivate *priv = service->priv;
+  GError *error = NULL;
+  const gchar *path = cm_service_get_object_path (after);
+
+  g_print ("%s:%s\n", __FUNCTION__, cm_service_get_name (service));
+
+  service_proxy_call_destroy (service, &priv->move_before_proxy_call);
+
+  if (priv->move_before_proxy_call)
+    return FALSE;
+
+  priv->move_after_proxy_call = dbus_g_proxy_begin_call
+    (priv->proxy, "MoveAfter",
+     service_move_after_call_notify, service, NULL,
+     G_TYPE_STRING, path,
+     G_TYPE_INVALID);
+
+  if (!priv->move_after_proxy_call)
+  {
+    g_print ("MoveAfter failed: %s\n", error ? error->message : "Unknown");
     g_clear_error (&error);
     return FALSE;
   }
