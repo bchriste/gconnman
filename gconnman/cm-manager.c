@@ -23,6 +23,7 @@ struct _CmManagerPrivate
   gboolean offline_mode;
   GList *devices;
   GList *services;
+  gchar *state;
 };
 
 static void manager_property_change_handler_proxy (DBusGProxy *, const gchar *,
@@ -30,6 +31,10 @@ static void manager_property_change_handler_proxy (DBusGProxy *, const gchar *,
 enum
 {
   SIGNAL_UPDATE,
+  SIGNAL_STATE_CHANGED,
+  SIGNAL_OFFLINE_MODE_CHANGED,
+  SIGNAL_DEVICES_CHANGED,
+  SIGNAL_SERVICES_CHANGED,
   SIGNAL_LAST
 };
 
@@ -87,6 +92,7 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
 	priv->devices = g_list_append (priv->devices, device);
       }
     }
+    g_signal_emit (manager, manager_signals[SIGNAL_DEVICES_CHANGED], 0);
     return;
   }
 
@@ -120,12 +126,22 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
       }
       priv->services = g_list_append (priv->services, service);
     }
+    g_signal_emit (manager, manager_signals[SIGNAL_SERVICES_CHANGED], 0);
     return;
   }
 
   if (!strcmp ("OfflineMode", key))
   {
     priv->offline_mode = g_value_get_boolean (value);
+    g_signal_emit (manager, manager_signals[SIGNAL_OFFLINE_MODE_CHANGED], 0);
+    return;
+  }
+
+  if (!strcmp ("State", key))
+  {
+    g_free (priv->state);
+    priv->state = g_strdup (g_value_get_string (value));
+    g_signal_emit (manager, manager_signals[SIGNAL_STATE_CHANGED], 0);
     return;
   }
 
@@ -200,8 +216,6 @@ manager_property_change_handler_proxy (DBusGProxy *proxy,
   g_free (tmp);
 
   manager_update_property (key, value, manager);
-
-  manager_emit_updated (manager);
 }
 
 static GQuark
@@ -330,6 +344,13 @@ cm_manager_get_active_service_type (CmManager *manager)
   CmService *active = (CmService *)g_list_first (priv->services)->data;
 
   return cm_service_get_type (active);
+}
+
+const gchar *
+cm_manager_get_state (CmManager *manager)
+{
+  CmManagerPrivate *priv = manager->priv;
+  return priv->state;
 }
 
 /*****************************************************************************

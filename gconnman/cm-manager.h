@@ -50,6 +50,7 @@ CmManager *cm_manager_new (GError **error);
 GList *cm_manager_get_devices (CmManager *manager);
 GList *cm_manager_get_services (CmManager *manager);
 gboolean cm_manager_get_offline_mode (CmManager *manager);
+const gchar *cm_manager_get_state (CmManager *manager);
 const gchar *cm_manager_get_active_service_state (CmManager *manager);
 const gchar *cm_manager_get_active_service_type (CmManager *manager);
 const gchar *cm_manager_get_active_service_name (CmManager *manager);
