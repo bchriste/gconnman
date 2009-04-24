@@ -44,6 +44,14 @@ struct _CmServicePrivate
 enum
 {
   SIGNAL_UPDATE,
+  SIGNAL_STATE_CHANGED,
+  SIGNAL_NAME_CHANGED,
+  SIGNAL_TYPE_CHANGED,
+  SIGNAL_MODE_CHANGED,
+  SIGNAL_SECURITY_CHANGED,
+  SIGNAL_PASSPHRASE_CHANGED,
+  SIGNAL_STRENGTH_CHANGED,
+  SIGNAL_FAVORITE_CHANGED,
   SIGNAL_LAST
 };
 
@@ -92,6 +100,7 @@ service_update_property (const gchar *key, GValue *value, CmService *service)
     g_free (priv->name);
     priv->name = g_strdup (g_value_get_string (value));
     priv->flags |= SERVICE_INFO_NAME;
+    g_signal_emit (service, service_signals[SIGNAL_NAME_CHANGED], 0);
     return;
   }
 
@@ -100,6 +109,7 @@ service_update_property (const gchar *key, GValue *value, CmService *service)
     g_free (priv->type);
     priv->type = g_strdup (g_value_get_string (value));
     priv->flags |= SERVICE_INFO_TYPE;
+    g_signal_emit (service, service_signals[SIGNAL_TYPE_CHANGED], 0);
     return;
   }
 
@@ -108,6 +118,7 @@ service_update_property (const gchar *key, GValue *value, CmService *service)
     g_free (priv->mode);
     priv->mode = g_strdup (g_value_get_string (value));
     priv->flags |= SERVICE_INFO_MODE;
+    g_signal_emit (service, service_signals[SIGNAL_MODE_CHANGED], 0);
     return;
   }
 
@@ -116,6 +127,7 @@ service_update_property (const gchar *key, GValue *value, CmService *service)
     g_free (priv->security);
     priv->security = g_strdup (g_value_get_string (value));
     priv->flags |= SERVICE_INFO_SECURITY;
+    g_signal_emit (service, service_signals[SIGNAL_SECURITY_CHANGED], 0);
     return;
   }
 
@@ -124,6 +136,7 @@ service_update_property (const gchar *key, GValue *value, CmService *service)
     g_free (priv->passphrase);
     priv->passphrase = g_strdup (g_value_get_string (value));
     priv->flags |= SERVICE_INFO_PASSPHRASE;
+    g_signal_emit (service, service_signals[SIGNAL_PASSPHRASE_CHANGED], 0);
     return;
   }
 
@@ -131,6 +144,7 @@ service_update_property (const gchar *key, GValue *value, CmService *service)
   {
     priv->strength = g_value_get_uchar (value);
     priv->flags |= SERVICE_INFO_STRENGTH;
+    g_signal_emit (service, service_signals[SIGNAL_STRENGTH_CHANGED], 0);
     return;
   }
 
@@ -138,6 +152,7 @@ service_update_property (const gchar *key, GValue *value, CmService *service)
   {
     priv->favorite = g_value_get_boolean (value);
     priv->flags |= SERVICE_INFO_FAVORITE;
+    g_signal_emit (service, service_signals[SIGNAL_FAVORITE_CHANGED], 0);
     return;
   }
 
@@ -170,7 +185,6 @@ service_property_change_handler_proxy (DBusGProxy *proxy,
            cm_service_get_name (service), key, tmp);
   g_free (tmp);
   service_update_property (key, value, service);
-  service_emit_updated (service);
 }
 
 static void
@@ -206,7 +220,6 @@ service_get_properties_call_notify (DBusGProxy *proxy,
 
   g_hash_table_foreach (properties, (GHFunc)service_update_property, service);
   g_hash_table_unref (properties);
-  service_emit_updated (service);
 
   ASYNC_DEBUG ("Service::GetProperties invocation complete (%d properties).\n",
                count);
@@ -471,7 +484,6 @@ service_set_property_call_notify (DBusGProxy *proxy,
     service_update_property (priv->pending_property_name,
                              &priv->pending_property_value,
                              service);
-    service_emit_updated (service);
   }
 
   g_free (priv->pending_property_name);
