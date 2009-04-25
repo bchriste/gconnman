@@ -36,3 +36,5 @@ EXTRA_DIST = connman-marshal.list
 
 CLEANFILES = *~ gconnman.pc
 
+
+-include $(top_srcdir)/git.mk
