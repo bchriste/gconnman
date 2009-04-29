@@ -55,6 +55,7 @@ AC_OUTPUT([Makefile
           gconnman/Makefile
           gconnman/gconnman.pc
 	  sample/Makefile
+          tests/Makefile
 	  ])
 #	  doc/Makefile
 #	  doc/reference/Makefile

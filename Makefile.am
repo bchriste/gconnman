@@ -1,7 +1,7 @@
 EXTRA_DIST = autogen.sh
 #DISTCHECK_CONFIGURE_FLAGS=--enable-gtk-doc
 #SUBDIRS = gconnman doc
-SUBDIRS = gconnman
+SUBDIRS = gconnman tests
 if SAMPLE
 SUBDIRS += sample
 endif
