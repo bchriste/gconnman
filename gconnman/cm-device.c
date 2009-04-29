@@ -45,6 +45,7 @@ struct _CmDevicePrivate
 
   DBusGProxyCall *get_properties_proxy_call;
   DBusGProxyCall *propose_scan_proxy_call;
+  DBusGProxyCall *join_network_proxy_call;
 };
 
 static void device_property_change_handler_proxy (DBusGProxy *, const gchar *,
@@ -444,6 +445,66 @@ cm_device_get_powered (const CmDevice *device)
 {
   CmDevicePrivate *priv = device->priv;
   return priv->powered;
+}
+
+static void
+device_join_network_call_notify (DBusGProxy *proxy, DBusGProxyCall *call,
+                                 gpointer user_data)
+{
+  CmDevice *device = user_data;
+  CmDevicePrivate *priv = device->priv;
+  GError *error = NULL;
+
+  if (priv->join_network_proxy_call != call)
+    g_print ("%s call mismatch!\n", __FUNCTION__);
+
+  priv->join_network_proxy_call = NULL;
+
+  if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
+  {
+    g_print ("Error calling dbus_g_proxy_end_call in %s: %s\n",
+             __FUNCTION__, error->message);
+    g_clear_error (&error);
+  }
+
+  ASYNC_DEBUG ("Device::JoinNetwork invocation complete.\n");
+}
+
+gboolean
+cm_device_join_network (CmDevice *device, const gchar *ssid,
+                        const gchar *security, const gchar *passphrase)
+{
+  CmDevicePrivate *priv = device->priv;
+
+  if (priv->join_network_proxy_call)
+  {
+    g_print ("Not joining network on %s - pending call\n",
+             cm_device_get_name (device));
+    return FALSE;
+  }
+
+  ASYNC_DEBUG ("Device::JoinNetwork invocation starting.\n");
+
+  priv->join_network_proxy_call = dbus_g_proxy_begin_call (priv->proxy,
+                                                           "JoinNetwork",
+                                                           device_join_network_call_notify,
+                                                           device,
+                                                           NULL,
+                                                           G_TYPE_STRING,
+                                                           ssid,
+                                                           G_TYPE_STRING,
+                                                           security,
+                                                           G_TYPE_STRING,
+                                                           passphrase,
+                                                           G_TYPE_INVALID);
+  if (!priv->join_network_proxy_call)
+  {
+    g_print ("Joining network on %s failed.\n",
+             cm_device_get_name (device));
+    return FALSE;
+  }
+
+  return TRUE;
 }
 
 /*****************************************************************************
