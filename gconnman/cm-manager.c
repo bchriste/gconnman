@@ -314,11 +314,20 @@ cm_manager_set_offline_mode (CmManager *manager, gboolean offline)
  * The list of services is sorted by connman so the active service
  * should always be the first item in our list
  */
+CmService *
+cm_manager_get_active_service (CmManager *manager)
+{
+  CmManagerPrivate *priv = manager->priv;
+  CmService *active = CM_SERVICE (g_list_first (priv->services)->data);
+
+  return active;
+}
+
 const gchar *
 cm_manager_get_active_service_state (CmManager *manager)
 {
   CmManagerPrivate *priv = manager->priv;
-  CmService *active = (CmService *)g_list_first (priv->services)->data;
+  CmService *active = CM_SERVICE (g_list_first (priv->services)->data);
 
   return cm_service_get_state (active);
 }
@@ -327,7 +336,7 @@ const gchar *
 cm_manager_get_active_service_name (CmManager *manager)
 {
   CmManagerPrivate *priv = manager->priv;
-  CmService *active = (CmService *)g_list_first (priv->services)->data;
+  CmService *active = CM_SERVICE (g_list_first (priv->services)->data);
   const gchar *name = cm_service_get_name (active);
   if (!name)
   {
@@ -341,7 +350,7 @@ const gchar *
 cm_manager_get_active_service_type (CmManager *manager)
 {
   CmManagerPrivate *priv = manager->priv;
-  CmService *active = (CmService *)g_list_first (priv->services)->data;
+  CmService *active = CM_SERVICE (g_list_first (priv->services)->data);
 
   return cm_service_get_type (active);
 }
@@ -425,7 +434,7 @@ manager_class_init (CmManagerClass *klass)
     g_cclosure_marshal_VOID__VOID,
     G_TYPE_NONE, 0);
   manager_signals[SIGNAL_DEVICES_CHANGED] = g_signal_new (
-    "offline-mode-changed",
+    "devices-changed",
     G_TYPE_FROM_CLASS (gobject_class),
     G_SIGNAL_RUN_LAST,
     0,
@@ -433,7 +442,7 @@ manager_class_init (CmManagerClass *klass)
     g_cclosure_marshal_VOID__VOID,
     G_TYPE_NONE, 0);
   manager_signals[SIGNAL_SERVICES_CHANGED] = g_signal_new (
-    "offline-mode-changed",
+    "services-changed",
     G_TYPE_FROM_CLASS (gobject_class),
     G_SIGNAL_RUN_LAST,
     0,

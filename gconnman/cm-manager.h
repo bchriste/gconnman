@@ -8,6 +8,7 @@ typedef struct _CmManagerClass CmManagerClass;
 typedef struct _CmManagerPrivate CmManagerPrivate;
 
 #include <gconnman/gconnman.h>
+#include <gconnman/cm-service.h>
 
 G_BEGIN_DECLS
 
@@ -51,6 +52,7 @@ GList *cm_manager_get_devices (CmManager *manager);
 GList *cm_manager_get_services (CmManager *manager);
 gboolean cm_manager_get_offline_mode (CmManager *manager);
 const gchar *cm_manager_get_state (CmManager *manager);
+CmService *cm_manager_get_active_service (CmManager *manager);
 const gchar *cm_manager_get_active_service_state (CmManager *manager);
 const gchar *cm_manager_get_active_service_type (CmManager *manager);
 const gchar *cm_manager_get_active_service_name (CmManager *manager);
