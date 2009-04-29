@@ -187,6 +187,8 @@ service_property_change_handler_proxy (DBusGProxy *proxy,
            cm_service_get_name (service), key, tmp);
   g_free (tmp);
   service_update_property (key, value, service);
+
+  service_emit_updated (service);
 }
 
 static void
@@ -222,9 +224,12 @@ service_get_properties_call_notify (DBusGProxy *proxy,
 
   g_hash_table_foreach (properties, (GHFunc)service_update_property, service);
   g_hash_table_unref (properties);
+  service_emit_updated (service);
 
   ASYNC_DEBUG ("Service::GetProperties invocation complete (%d properties).\n",
                count);
+
+  priv->get_properties_proxy_call = NULL;
 }
 
 CmService *
