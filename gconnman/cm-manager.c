@@ -165,6 +165,13 @@ cm_manager_refresh (CmManager *manager)
     priv->devices = g_list_delete_link (priv->devices, priv->devices);
   }
 
+  /* Remove all the prior services */
+  while (priv->services)
+  {
+    g_object_unref (priv->services->data);
+    priv->services = g_list_delete_link (priv->services, priv->services);
+  }
+
   dbus_g_proxy_add_signal (
     priv->proxy, "PropertyChanged",
     G_TYPE_STRING, G_TYPE_VALUE, G_TYPE_INVALID);
@@ -328,8 +335,19 @@ cm_manager_get_active_service_state (CmManager *manager)
 {
   CmManagerPrivate *priv = manager->priv;
   CmService *active = CM_SERVICE (g_list_first (priv->services)->data);
+  const gchar *state;
 
-  return cm_service_get_state (active);
+  if (active)
+  {
+    state = cm_service_get_state (active);
+  }
+
+  if (!state || state[0] == '\0')
+  {
+    state = g_strdup_printf ("%s", "");
+  }
+
+  return state;
 }
 
 const gchar *
@@ -337,10 +355,20 @@ cm_manager_get_active_service_name (CmManager *manager)
 {
   CmManagerPrivate *priv = manager->priv;
   CmService *active = CM_SERVICE (g_list_first (priv->services)->data);
-  const gchar *name = cm_service_get_name (active);
+  const gchar *name;
+
+  if (active)
+  {
+    name = cm_service_get_name (active);
+    if (!name)
+    {
+      name = cm_service_get_type (active);
+    }
+  }
+
   if (!name)
   {
-    name = cm_service_get_type (active);
+    name = g_strdup_printf ("%s", "");
   }
 
   return name;
