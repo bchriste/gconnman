@@ -326,6 +326,10 @@ cm_manager_get_active_service (CmManager *manager)
 {
   CmManagerPrivate *priv = manager->priv;
   CmService *active = CM_SERVICE (g_list_first (priv->services)->data);
+  if (!active || !cm_service_get_connected (active))
+  {
+    active = NULL;
+  }
 
   return active;
 }
@@ -337,7 +341,7 @@ cm_manager_get_active_service_state (CmManager *manager)
   CmService *active = CM_SERVICE (g_list_first (priv->services)->data);
   const gchar *state;
 
-  if (active)
+  if (active && cm_service_get_connected (active))
   {
     state = cm_service_get_state (active);
   }
@@ -357,7 +361,7 @@ cm_manager_get_active_service_name (CmManager *manager)
   CmService *active = CM_SERVICE (g_list_first (priv->services)->data);
   const gchar *name;
 
-  if (active)
+  if (active && cm_service_get_connected (active))
   {
     name = cm_service_get_name (active);
     if (!name)
@@ -379,6 +383,11 @@ cm_manager_get_active_service_type (CmManager *manager)
 {
   CmManagerPrivate *priv = manager->priv;
   CmService *active = CM_SERVICE (g_list_first (priv->services)->data);
+
+  if (!active || cm_service_get_connected (active))
+  {
+    active = NULL;
+  }
 
   return cm_service_get_type (active);
 }
