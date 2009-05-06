@@ -93,7 +93,7 @@ service_update_property (const gchar *key, GValue *value, CmService *service)
     {
       priv->connected = FALSE;
     }
-
+    g_signal_emit (service, service_signals[SIGNAL_STATE_CHANGED], 0);
     return;
   }
 
@@ -340,6 +340,8 @@ const char *
 cm_service_get_type (CmService *service)
 {
   CmServicePrivate *priv = service->priv;
+  if (!priv->type)
+    priv->type = g_strdup ("");
   return priv->type;
 }
 
@@ -355,6 +357,13 @@ cm_service_get_favorite (CmService *service)
 {
   CmServicePrivate *priv = service->priv;
   return priv->favorite;
+}
+
+gboolean
+cm_service_get_connected (CmService *service)
+{
+  CmServicePrivate *priv = service->priv;
+  return priv->connected;
 }
 
 const gchar *
@@ -704,6 +713,8 @@ static void
 service_init (CmService *self)
 {
   self->priv = CM_SERVICE_GET_PRIVATE (self);
+  self->priv->favorite = FALSE;
+  self->priv->connected = FALSE;
 }
 
 static void
