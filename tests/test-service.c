@@ -5,9 +5,10 @@
 void
 _pretty_print_service (CmService *service)
 {
-  g_debug ("Service %s found of type %s\nPath is %s\n",
+  g_debug ("Service %s found of type %s and state %s\nPath is %s\n",
            cm_service_get_name (service),
            cm_service_get_type (service),
+           cm_service_get_state (service),
            cm_service_get_object_path (service));
 }
 
@@ -19,11 +20,26 @@ _manager_updated_cb (CmManager *manager,
 }
 
 void
+_service_state_changed_cb (CmService *service,
+                           gpointer   user_data)
+{
+  g_debug ("Service state changed\nState now %s",
+           cm_service_get_state (service));
+}
+
+void
 _service_updated_cb (CmService *service,
                      gpointer user_data)
 {
   g_debug ("Service updated\n");
   _pretty_print_service (service);
+  g_signal_handlers_disconnect_by_func (G_OBJECT (service),
+                                        G_CALLBACK (_service_updated_cb),
+                                        user_data);
+  g_signal_connect (G_OBJECT (service),
+                    "state-changed",
+                    G_CALLBACK (_service_state_changed_cb),
+                    NULL);
 }
 
 void
