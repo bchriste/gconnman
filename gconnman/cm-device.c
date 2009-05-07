@@ -46,6 +46,10 @@ struct _CmDevicePrivate
   DBusGProxyCall *get_properties_proxy_call;
   DBusGProxyCall *propose_scan_proxy_call;
   DBusGProxyCall *join_network_proxy_call;
+  DBusGProxyCall *set_property_proxy_call;
+
+  GValue pending_property_value;
+  gchar *pending_property_name;
 };
 
 static void device_property_change_handler_proxy (DBusGProxy *, const gchar *,
@@ -308,7 +312,7 @@ internal_device_new (DBusGProxy *proxy, const gchar *path, GError **error)
   if (!priv->get_properties_proxy_call)
   {
     g_set_error (error, DEVICE_ERROR, DEVICE_ERROR_CONNMAN_GET_PROPERTIES,
-                 "Invokation of GetProperties failed.");
+                 "Invocation of GetProperties failed.");
     g_object_unref (device);
     return NULL;
   }
@@ -418,6 +422,72 @@ cm_device_scan (CmDevice *device)
   return TRUE;
 }
 
+static void
+device_set_property_call_notify (DBusGProxy *proxy,
+                                 DBusGProxyCall *call,
+                                 gpointer data)
+{
+  CmDevice *device = data;
+  CmDevicePrivate *priv = device->priv;
+  GError *error = NULL;
+
+  if (priv->set_property_proxy_call != call)
+    g_print ("%s Call mismatch!\n", __FUNCTION__);
+
+  priv->set_property_proxy_call = NULL;
+
+  if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
+  {
+    g_print ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
+             __FUNCTION__, cm_device_get_name (device), error->message);
+    g_clear_error (&error);
+  }
+  else
+  {
+    device_update_property (priv->pending_property_name,
+                            &priv->pending_property_value,
+                            device);
+  }
+
+  g_free (priv->pending_property_name);
+  g_value_unset (&priv->pending_property_value);
+  priv->pending_property_name = NULL;
+
+  g_print ("%s:%s\n", __FUNCTION__, cm_device_get_name (device));
+}
+
+gboolean
+device_set_property (CmDevice *device, const gchar *property, GValue *value)
+{
+  CmDevicePrivate *priv = device->priv;
+  GError *error = NULL;
+
+  g_print ("%s:%s\n", __FUNCTION__, cm_device_get_name (device));
+
+  if (priv->set_property_proxy_call)
+    return FALSE;
+
+  priv->pending_property_name = g_strdup (property);
+  g_value_init (&priv->pending_property_value, G_VALUE_TYPE (value));
+  g_value_copy (value, &priv->pending_property_value);
+
+  priv->set_property_proxy_call = dbus_g_proxy_begin_call (
+    priv->proxy, "SetProperty",
+    device_set_property_call_notify, device, NULL,
+    G_TYPE_STRING, property,
+    G_TYPE_VALUE, value,
+    G_TYPE_INVALID);
+
+  if (!priv->set_property_proxy_call)
+  {
+    g_print ("SetProperty failed: %s\n", error ? error->message : "Unknown");
+    g_clear_error (&error);
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
 gboolean
 cm_device_is_same (const CmDevice *device, const gchar *path)
 {
@@ -433,11 +503,18 @@ cm_device_get_type (const CmDevice *device)
   return priv->type;
 }
 
-void
-cm_device_set_powered (const CmDevice *device, gboolean powered)
+gboolean
+cm_device_set_powered (CmDevice *device, gboolean powered)
 {
-  CmDevicePrivate *priv = device->priv;
-  priv->powered = powered;
+  GValue value = { 0 };
+  gboolean ret;
+  g_print ("Setting powered state for %s to: %i\n",
+           cm_device_get_name (device), powered);
+  g_value_init (&value, G_TYPE_BOOLEAN);
+  g_value_set_boolean (&value, powered);
+  ret = device_set_property (device, "Powered", &value);
+  g_value_unset (&value);
+  return ret;
 }
 
 gboolean

@@ -391,7 +391,7 @@ internal_network_new (DBusGProxy *proxy,
   if (!priv->get_properties_proxy_call)
   {
     g_set_error (error, NETWORK_ERROR, NETWORK_ERROR_CONNMAN_GET_PROPERTIES,
-                 "Invokation of GetProperties failed.");
+                 "Invocation of GetProperties failed.");
     g_object_unref (network);
     return NULL;
   }
