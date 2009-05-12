@@ -1,3 +1,28 @@
-3/25/2009 -- v0.1 Project created by Linux Project Generator
-3/25/2009 -- v0.2 Added Fixings sources into project
+Changes in 0.1.9
 
+* Set version stamp to 0.1.9
+* Fix setting powered state. Set the property of the DBus object not the GObject
+* Update test-service to test state-changed signal of CmService
+* Make the _get_active_service_* methods safer
+* Add method for getting CmServices connected property and various tidy ups
+* Use git.mk from pango project for automatic gitignore generation
+* Add test for CmService and general test infrastructure
+* Add safety around getting active service properties
+* Always emit updated signal even if emitting per-propery signals
+* Wrap Devices JoinNetwork method.
+* Fix property installation in manager.
+* Actually install signals in CmManager and CmService
+* Wrap the Service objects MoveBefore and MoveAfter methods
+* Add method for returning the CmService objects path
+* Add individual property signals for CmManager
+* Add per-property signals to CmService
+* Update CmService with getters for all properties
+* Add cm_manager_get_active_service_name
+* Use git.mk from the Pango project for automatic .gitignore generation
+* Only initialize threads if they haven't already been
+* Add gthread initialisation.
+
+Old History
+
+3/25/2009 -- v0.2 Added Fixings sources into project
+3/25/2009 -- v0.1 Project created by Linux Project Generator
