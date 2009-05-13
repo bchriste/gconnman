@@ -547,11 +547,20 @@ device_join_network_call_notify (DBusGProxy *proxy, DBusGProxyCall *call,
   ASYNC_DEBUG ("Device::JoinNetwork invocation complete.\n");
 }
 
+static void
+_free_g_value (GValue *value)
+{
+  g_value_unset (value);
+}
+
 gboolean
 cm_device_join_network (CmDevice *device, const gchar *ssid,
                         const gchar *security, const gchar *passphrase)
 {
   CmDevicePrivate *priv = device->priv;
+  GHashTable *net_props;
+  GValue *mode_val, *network_val, *security_val, *secret_val;
+  gchar *proxy;
 
   if (priv->join_network_proxy_call)
   {
@@ -560,20 +569,46 @@ cm_device_join_network (CmDevice *device, const gchar *ssid,
     return FALSE;
   }
 
+  /* Populate a hashtable/dictionary of network property key-value pairs */
+  net_props = g_hash_table_new_full (g_str_hash,
+                                     g_str_equal,
+                                     g_free,
+                                     (GDestroyNotify) _free_g_value);
+
+  mode_val = g_new0 (GValue, 1);
+  g_value_init (mode_val, G_TYPE_STRING);
+  g_value_set_string (mode_val, g_strdup ("managed"));
+  g_hash_table_insert (net_props, g_strdup ("WiFi.Mode"), mode_val);
+
+  network_val = g_new0 (GValue, 1);
+  g_value_init (network_val, G_TYPE_STRING);
+  g_value_set_string (network_val, ssid);
+  g_hash_table_insert (net_props, g_strdup ("WiFi.SSID"), network_val);
+
+  /* Security and passphrase are optional */
+  if (security)
+  {
+    security_val = g_new0 (GValue, 1);
+    g_value_init (security_val, G_TYPE_STRING);
+    g_value_set_string (security_val, security);
+    g_hash_table_insert (net_props, g_strdup ("WiFi.Security"), security_val);
+  }
+
+  if (passphrase)
+  {
+    secret_val = g_new0 (GValue, 1);
+    g_value_init (secret_val, G_TYPE_STRING);
+    g_value_set_string (secret_val, passphrase);
+    g_hash_table_insert (net_props, g_strdup ("WiFi.Passphrase"), secret_val);
+  }
+
   ASYNC_DEBUG ("Device::JoinNetwork invocation starting.\n");
 
-  priv->join_network_proxy_call = dbus_g_proxy_begin_call (priv->proxy,
-                                                           "JoinNetwork",
-                                                           device_join_network_call_notify,
-                                                           device,
-                                                           NULL,
-                                                           G_TYPE_STRING,
-                                                           ssid,
-                                                           G_TYPE_STRING,
-                                                           security,
-                                                           G_TYPE_STRING,
-                                                           passphrase,
-                                                           G_TYPE_INVALID);
+  priv->join_network_proxy_call = dbus_g_proxy_begin_call
+    (priv->proxy, "JoinNetwork", device_join_network_call_notify, device, NULL,
+     dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE),
+     net_props, G_TYPE_INVALID);
+
   if (!priv->join_network_proxy_call)
   {
     g_print ("Joining network on %s failed.\n",
