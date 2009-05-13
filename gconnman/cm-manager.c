@@ -71,7 +71,7 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
   {
     GPtrArray *devices = g_value_get_boxed (value);
     gint i;
-    const gchar *path;
+    const gchar *path = NULL;
 
     for (i = 0; i < devices->len; i++)
     {
@@ -100,7 +100,7 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
   {
     GPtrArray *services = g_value_get_boxed (value);
     gint i;
-    const gchar *path;
+    const gchar *path = NULL;
     GError *error = NULL;
 
     /* We are receiving a list which is potentially entirely different
@@ -339,7 +339,7 @@ cm_manager_get_active_service_state (CmManager *manager)
 {
   CmManagerPrivate *priv = manager->priv;
   CmService *active = CM_SERVICE (g_list_first (priv->services)->data);
-  const gchar *state;
+  const gchar *state = NULL;
 
   if (active && cm_service_get_connected (active))
   {
@@ -359,12 +359,12 @@ cm_manager_get_active_service_name (CmManager *manager)
 {
   CmManagerPrivate *priv = manager->priv;
   CmService *active = CM_SERVICE (g_list_first (priv->services)->data);
-  const gchar *name;
+  const gchar *name = NULL;
 
   if (active && cm_service_get_connected (active))
   {
     name = cm_service_get_name (active);
-    if (!name)
+    if (!name || name[0] == '\0')
     {
       name = cm_service_get_type (active);
     }
