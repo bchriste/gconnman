@@ -256,6 +256,13 @@ cm_connection_get_default (CmConnection *connection)
   return priv->default_connection;
 }
 
+guint
+cm_connection_get_strength (CmConnection *connection)
+{
+  CmConnectionPrivate *priv = connection->priv;
+  return priv->strength;
+}
+
 const gchar *
 cm_connection_get_path (CmConnection *connection)
 {
