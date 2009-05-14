@@ -5,5 +5,6 @@
 #include <gconnman/cm-device.h>
 #include <gconnman/cm-network.h>
 #include <gconnman/cm-service.h>
+#include <gconnman/cm-connection.h>
 
 #endif

@@ -49,6 +49,7 @@ typedef enum
 CmManager *cm_manager_new (GError **error);
 /* getters */
 GList *cm_manager_get_devices (CmManager *manager);
+GList *cm_manager_get_connections (CmManager *manager);
 GList *cm_manager_get_services (CmManager *manager);
 gboolean cm_manager_get_offline_mode (CmManager *manager);
 const gchar *cm_manager_get_state (CmManager *manager);

@@ -23,6 +23,7 @@ struct _CmManagerPrivate
   gboolean offline_mode;
   GList *devices;
   GList *services;
+  GList *connections;
   gchar *state;
 };
 
@@ -35,6 +36,7 @@ enum
   SIGNAL_OFFLINE_MODE_CHANGED,
   SIGNAL_DEVICES_CHANGED,
   SIGNAL_SERVICES_CHANGED,
+  SIGNAL_CONNECTIONS_CHANGED,
   SIGNAL_LAST
 };
 
@@ -56,6 +58,21 @@ manager_find_device (CmManager *manager, const gchar *path)
     CmDevice *device = tmp->data;
     if (cm_device_is_same (device, path))
       return device;
+    tmp = tmp->next;
+  }
+  return NULL;
+}
+
+static CmConnection *
+manager_find_connection (CmManager *manager, const gchar *path)
+{
+  CmManagerPrivate *priv = manager->priv;
+  GList *tmp = priv->connections;
+  while (tmp)
+  {
+    CmConnection *connection = tmp->data;
+    if (cm_connection_is_same (connection, path))
+      return connection;
     tmp = tmp->next;
   }
   return NULL;
@@ -93,6 +110,35 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
       }
     }
     g_signal_emit (manager, manager_signals[SIGNAL_DEVICES_CHANGED], 0);
+    return;
+  }
+
+  if (!strcmp ("Connections", key))
+  {
+    GPtrArray *connections = g_value_get_boxed (value);
+    gint i;
+    const gchar *path = NULL;
+
+    for (i = 0; i < connections->len; i++)
+    {
+      path = g_ptr_array_index (connections, i);
+      CmConnection *connection = manager_find_connection (manager, path);
+      if (!connection)
+      {
+        GError *error = NULL;
+        g_print ("New connection found: %s\n", path);
+        connection = internal_connection_new (priv->proxy, path, &error);
+        if (!connection)
+        {
+          g_print ("connection_new failed in %s: %s\n", __FUNCTION__,
+                   error->message);
+          g_clear_error (&error);
+          continue;
+        }
+        priv->connections = g_list_append (priv->connections, connection);
+      }
+    }
+    g_signal_emit (manager, manager_signals[SIGNAL_CONNECTIONS_CHANGED], 0);
     return;
   }
 
@@ -163,6 +209,13 @@ cm_manager_refresh (CmManager *manager)
   {
     g_object_unref (priv->devices->data);
     priv->devices = g_list_delete_link (priv->devices, priv->devices);
+  }
+
+  /* Remove all the prior connections */
+  while (priv->connections)
+  {
+    g_object_unref (priv->connections->data);
+    priv->connections = g_list_delete_link (priv->connections, priv->connections);
   }
 
   /* Remove all the prior services */
@@ -297,6 +350,13 @@ cm_manager_get_devices (CmManager *manager)
 }
 
 GList *
+cm_manager_get_connections (CmManager *manager)
+{
+  CmManagerPrivate *priv = manager->priv;
+  return g_list_copy (priv->connections);
+}
+
+GList *
 cm_manager_get_services (CmManager *manager)
 {
   CmManagerPrivate *priv = manager->priv;
@@ -424,11 +484,25 @@ manager_finalize (GObject *object)
     priv->devices = g_list_delete_link (priv->devices, priv->devices);
   }
 
+  while (priv->connections)
+  {
+    g_object_unref (priv->connections->data);
+    priv->connections = g_list_delete_link (priv->connections, priv->connections);
+  }
+
+  while (priv->services)
+  {
+    g_object_unref (priv->services->data);
+    priv->services = g_list_delete_link (priv->services, priv->services);
+  }
+
   if (priv->proxy)
     g_object_unref (priv->proxy);
 
   if (priv->connection)
     dbus_g_connection_unref (priv->connection);
+
+  g_free (priv->state);
 
   G_OBJECT_CLASS (manager_parent_class)->finalize (object);
 }
@@ -472,6 +546,14 @@ manager_class_init (CmManagerClass *klass)
     G_TYPE_NONE, 0);
   manager_signals[SIGNAL_DEVICES_CHANGED] = g_signal_new (
     "devices-changed",
+    G_TYPE_FROM_CLASS (gobject_class),
+    G_SIGNAL_RUN_LAST,
+    0,
+    NULL, NULL,
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
+  manager_signals[SIGNAL_CONNECTIONS_CHANGED] = g_signal_new (
+    "connections-changed",
     G_TYPE_FROM_CLASS (gobject_class),
     G_SIGNAL_RUN_LAST,
     0,

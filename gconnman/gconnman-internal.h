@@ -14,5 +14,7 @@ CmDevice *internal_device_new (DBusGProxy *proxy, const gchar *path,
                                GError **error);
 CmService *internal_service_new (DBusGProxy *proxy, const gchar *path,
 				 GError **error);
+CmConnection *internal_connection_new (DBusGProxy *proxy, const gchar *path,
+                                       GError **error);
 
 #endif
