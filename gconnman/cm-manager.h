@@ -54,9 +54,6 @@ GList *cm_manager_get_services (CmManager *manager);
 gboolean cm_manager_get_offline_mode (CmManager *manager);
 const gchar *cm_manager_get_state (CmManager *manager);
 CmService *cm_manager_get_active_service (CmManager *manager);
-const gchar *cm_manager_get_active_service_state (CmManager *manager);
-const gchar *cm_manager_get_active_service_type (CmManager *manager);
-const gchar *cm_manager_get_active_service_name (CmManager *manager);
 
 gboolean cm_manager_refresh (CmManager *manager);
 void cm_manager_set_offline_mode (CmManager *manager, gboolean offline);

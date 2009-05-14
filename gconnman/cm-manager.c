@@ -395,64 +395,6 @@ cm_manager_get_active_service (CmManager *manager)
 }
 
 const gchar *
-cm_manager_get_active_service_state (CmManager *manager)
-{
-  CmManagerPrivate *priv = manager->priv;
-  CmService *active = CM_SERVICE (g_list_first (priv->services)->data);
-  const gchar *state = NULL;
-
-  if (active && cm_service_get_connected (active))
-  {
-    state = cm_service_get_state (active);
-  }
-
-  if (!state || state[0] == '\0')
-  {
-    state = g_strdup_printf ("%s", "");
-  }
-
-  return state;
-}
-
-const gchar *
-cm_manager_get_active_service_name (CmManager *manager)
-{
-  CmManagerPrivate *priv = manager->priv;
-  CmService *active = CM_SERVICE (g_list_first (priv->services)->data);
-  const gchar *name = NULL;
-
-  if (active && cm_service_get_connected (active))
-  {
-    name = cm_service_get_name (active);
-    if (!name || name[0] == '\0')
-    {
-      name = cm_service_get_type (active);
-    }
-  }
-
-  if (!name)
-  {
-    name = g_strdup_printf ("%s", "");
-  }
-
-  return name;
-}
-
-const gchar *
-cm_manager_get_active_service_type (CmManager *manager)
-{
-  CmManagerPrivate *priv = manager->priv;
-  CmService *active = CM_SERVICE (g_list_first (priv->services)->data);
-
-  if (!active || cm_service_get_connected (active))
-  {
-    active = NULL;
-  }
-
-  return cm_service_get_type (active);
-}
-
-const gchar *
 cm_manager_get_state (CmManager *manager)
 {
   CmManagerPrivate *priv = manager->priv;
