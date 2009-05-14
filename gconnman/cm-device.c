@@ -508,8 +508,6 @@ cm_device_set_powered (CmDevice *device, gboolean powered)
 {
   GValue value = { 0 };
   gboolean ret;
-  g_print ("Setting powered state for %s to: %i\n",
-           cm_device_get_name (device), powered);
   g_value_init (&value, G_TYPE_BOOLEAN);
   g_value_set_boolean (&value, powered);
   ret = device_set_property (device, "Powered", &value);
