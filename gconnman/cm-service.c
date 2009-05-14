@@ -700,11 +700,26 @@ service_finalize (GObject *object)
   CmService *service = CM_SERVICE (object);
   CmServicePrivate *priv = service->priv;
 
+  dbus_g_proxy_disconnect_signal (
+    priv->proxy, "PropertyChanged",
+    G_CALLBACK (service_property_change_handler_proxy),
+    service);
+
+  service_proxy_call_destroy (service, &priv->get_properties_proxy_call);
+  service_proxy_call_destroy (service, &priv->connect_proxy_call);
+  service_proxy_call_destroy (service, &priv->disconnect_proxy_call);
+  service_proxy_call_destroy (service, &priv->set_property_proxy_call);
+  service_proxy_call_destroy (service, &priv->move_before_proxy_call);
+  service_proxy_call_destroy (service, &priv->move_after_proxy_call);
+
   g_free (priv->state);
   g_free (priv->name);
   g_free (priv->type);
   g_free (priv->mode);
   g_free (priv->security);
+
+  if (priv->proxy)
+    g_object_unref (priv->proxy);
 
   G_OBJECT_CLASS (service_parent_class)->finalize (object);
 }
@@ -713,6 +728,11 @@ static void
 service_init (CmService *self)
 {
   self->priv = CM_SERVICE_GET_PRIVATE (self);
+  self->priv->state = NULL;
+  self->priv->name = NULL;
+  self->priv->type = NULL;
+  self->priv->mode = NULL;
+  self->priv->security = NULL;
   self->priv->favorite = FALSE;
   self->priv->connected = FALSE;
 }
