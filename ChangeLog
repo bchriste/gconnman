@@ -1,3 +1,14 @@
+Changes in 0.1.11 (14/05/2009)
+
+* Set version stamp to 0.1.11
+* Fix finalize methods of CmService and CmManager
+* Add CmConnection object binding org.moblin.connman.Connection
+* Enhance CmManager to also include the Connections property of the d-bus
+object
+* Remove cm_manager_get_active_service_* convenience functions. They are
+extremely buggy and this was the wrong way to get this information
+* Add cm_manager_get_active_connection method
+
 Changes in 0.1.10
 
 * Set version stamp to 0.1.10

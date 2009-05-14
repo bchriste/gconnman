@@ -5,7 +5,7 @@ AC_PREREQ(2.61)
 # even micro numbers indicate released versions
 m4_define(gconnman_version_major, 0)
 m4_define(gconnman_version_minor, 1)
-m4_define(gconnman_version_micro, 10)
+m4_define(gconnman_version_micro, 11)
 
 m4_define([gconnman_version],
           [gconnman_version_major.gconnman_version_minor.gconnman_version_micro])
@@ -22,6 +22,8 @@ AC_PROG_INSTALL
 
 PKG_PROG_PKG_CONFIG
 
+# Hack to make sure the system has a connman with the required d-bus API
+PKG_CHECK_MODULES(CONNMAN, connman >= 0.17)
 PKG_CHECK_MODULES(GCONNMAN, glib-2.0 gthread-2.0 dbus-glib-1 gobject-2.0)
 
 AC_SUBST(GCONNMAN_CFLAGS)

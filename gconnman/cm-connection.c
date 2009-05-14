@@ -318,6 +318,9 @@ static void
 connection_init (CmConnection *self)
 {
   self->priv = CM_CONNECTION_GET_PRIVATE (self);
+  self->priv->default_connection = FALSE;
+  self->priv->type = CONNECTION_UNKNOWN;
+  self->priv->strength = 0;
 }
 
 static void
