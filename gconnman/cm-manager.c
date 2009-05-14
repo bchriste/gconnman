@@ -394,6 +394,23 @@ cm_manager_get_active_service (CmManager *manager)
   return active;
 }
 
+CmConnection *
+cm_manager_get_active_connection (CmManager *manager)
+{
+  CmManagerPrivate *priv = manager->priv;
+  GList *connections = priv->connections;
+
+  while (connections)
+  {
+    CmConnection *connection = connections->data;
+    if (cm_connection_get_default (connection))
+      return connection;
+    connections = connections->next;
+  }
+
+  return NULL;
+}
+
 const gchar *
 cm_manager_get_state (CmManager *manager)
 {

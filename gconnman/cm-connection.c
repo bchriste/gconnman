@@ -249,6 +249,13 @@ cm_connection_get_interface (CmConnection *connection)
   return priv->interface;
 }
 
+gboolean
+cm_connection_get_default (CmConnection *connection)
+{
+  CmConnectionPrivate *priv = connection->priv;
+  return priv->default_connection;
+}
+
 const gchar *
 cm_connection_get_path (CmConnection *connection)
 {
