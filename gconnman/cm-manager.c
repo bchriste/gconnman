@@ -297,6 +297,8 @@ manager_property_change_handler_proxy (DBusGProxy *proxy,
   g_free (tmp);
 
   manager_update_property (key, value, manager);
+
+  manager_emit_updated (manager);
 }
 
 static GQuark

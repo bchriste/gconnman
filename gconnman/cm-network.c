@@ -298,6 +298,7 @@ network_property_change_handler_proxy (DBusGProxy *proxy,
            cm_network_get_name (network), key, tmp);
   g_free (tmp);
   network_update_property (key, value, network);
+
   network_emit_updated (network);
 }
 

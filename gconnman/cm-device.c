@@ -469,6 +469,7 @@ device_set_property_call_notify (DBusGProxy *proxy,
     device_update_property (priv->pending_property_name,
                             &priv->pending_property_value,
                             device);
+    device_emit_updated (device);
   }
 
   g_free (priv->pending_property_name);

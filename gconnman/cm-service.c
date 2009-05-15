@@ -532,6 +532,7 @@ service_set_property_call_notify (DBusGProxy *proxy,
     service_update_property (priv->pending_property_name,
                              &priv->pending_property_value,
                              service);
+    service_emit_updated (service);
   }
 
   g_free (priv->pending_property_name);
