@@ -311,11 +311,15 @@ cm_service_get_state (CmService *service)
   return priv->state;
 }
 
+/* Ethernet services may not have a name set, in which case return the type */
 const gchar *
 cm_service_get_name (const CmService *service)
 {
   CmServicePrivate *priv = service->priv;
-  return priv->name;
+  if (priv->name == NULL && g_strcmp0 ("ethernet", priv->type) == 0)
+    return priv->type;
+  else
+    return priv->name;
 }
 
 const gchar *
