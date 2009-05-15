@@ -28,8 +28,6 @@
  * WiFi.SSID     - {,32} byte binary SSID [ can contain embedded \0 ]
  * Strength      - int [unknown unit]
  * Priority      - int [unknown unit]
- * Remember      - boolean whether ConnMan should remember this network
- * Available     - boolean if this network is currently found in scan
  * Connected     - active network
  * WiFi.Mode     - ad-hoc, managed
  * WiFi.Security - wpa, wpa2, wep, none
@@ -68,8 +66,6 @@ struct _CmNetworkPrivate
   guchar strength;
   guchar priority;
   gboolean connected;
-  gboolean remember;
-  gboolean available;
   gchar *name;
   gchar *mode;
   gchar *security;
@@ -195,20 +191,6 @@ network_update_property (const gchar *key, GValue *value, CmNetwork *network)
     return;
   }
 
-  if (!strcmp ("Remember", key))
-  {
-    priv->remember = g_value_get_boolean (value);
-    priv->flags |= NETWORK_INFO_REMEMBER;
-    return;
-  }
-
-  if (!strcmp ("Available", key))
-  {
-    priv->available = g_value_get_boolean (value);
-    priv->flags |= NETWORK_INFO_AVAILABLE;
-    return;
-  }
-
   if (!strcmp ("Connected", key))
   {
     priv->connected = g_value_get_boolean (value);
@@ -281,11 +263,9 @@ cm_network_print (const CmNetwork *network)
     tmp[max] = '\0';
   }
 
-  g_print ("%-*s:%9s %9s %8s %5s %7s %8s %3d %3d\n",
+  g_print ("%-*s:%9s %5s %7s %8s %3d %3d\n",
 	   max, tmp,
 	   priv->connected ? "CONNECTED" : "",
-	   priv->available ? "AVAILABLE" : "",
-	   priv->remember  ? "REMEMBER"  : "FORGET",
 	   priv->security  ? priv->security : "none",
 	   priv->passphrase  ? "<set>" : "<unset>",
 	   priv->mode      ? priv->mode : "managed",
@@ -553,13 +533,6 @@ cm_network_is_same (const CmNetwork *network, const gchar *path)
 {
   CmNetworkPrivate *priv = network->priv;
   return !strcmp (priv->path, path);
-}
-
-gboolean
-cm_network_is_available (const CmNetwork *network)
-{
-  CmNetworkPrivate *priv = network->priv;
-  return priv->available;
 }
 
 gulong

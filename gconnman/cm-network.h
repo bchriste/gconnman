@@ -73,13 +73,11 @@ typedef enum
   NETWORK_INFO_SSID       = 1 << 0,
   NETWORK_INFO_STRENGTH   = 1 << 1,
   NETWORK_INFO_PRIORITY   = 1 << 2,
-  NETWORK_INFO_REMEMBER   = 1 << 3,
-  NETWORK_INFO_AVAILABLE  = 1 << 4,
-  NETWORK_INFO_CONNECTED  = 1 << 5,
-  NETWORK_INFO_NAME       = 1 << 6,
-  NETWORK_INFO_SECURITY   = 1 << 7,
-  NETWORK_INFO_PASSPHRASE = 1 << 8,
-  NETWORK_INFO_MODE       = 1 << 9,
+  NETWORK_INFO_CONNECTED  = 1 << 3,
+  NETWORK_INFO_NAME       = 1 << 4,
+  NETWORK_INFO_SECURITY   = 1 << 5,
+  NETWORK_INFO_PASSPHRASE = 1 << 6,
+  NETWORK_INFO_MODE       = 1 << 7,
 } CmNetworkInfoMask;
 
 /* debug */
@@ -92,7 +90,6 @@ gboolean cm_network_disconnect (CmNetwork *network);
 /* const getters */
 gboolean cm_network_is_same (const CmNetwork *network, const gchar *path);
 const gchar *cm_network_get_name (const CmNetwork *network);
-gboolean cm_network_is_available (const CmNetwork *network);
 gboolean cm_network_is_connected (const CmNetwork *network);
 gboolean cm_network_is_secure (const CmNetwork *network);
 gulong cm_network_get_timestamp (const CmNetwork *network);

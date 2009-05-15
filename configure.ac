@@ -23,7 +23,7 @@ AC_PROG_INSTALL
 PKG_PROG_PKG_CONFIG
 
 # Hack to make sure the system has a connman with the required d-bus API
-PKG_CHECK_MODULES(CONNMAN, connman >= 0.17)
+PKG_CHECK_MODULES(CONNMAN, connman >= 0.19)
 PKG_CHECK_MODULES(GCONNMAN, glib-2.0 gthread-2.0 dbus-glib-1 gobject-2.0)
 
 AC_SUBST(GCONNMAN_CFLAGS)
