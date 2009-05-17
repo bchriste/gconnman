@@ -89,6 +89,7 @@ gboolean cm_service_disconnect (CmService *service);
 gboolean cm_service_move_before (CmService *service, CmService *before);
 gboolean cm_service_move_after (CmService *service, CmService *after);
 gboolean cm_service_is_same (const CmService *service, const gchar *path);
+gint cm_service_compare_services (CmService *first, CmService *second);
 
 /* const getters */
 const gchar *cm_service_get_path (CmService *service);
@@ -103,5 +104,6 @@ gboolean cm_service_get_favorite (CmService *service);
 gboolean cm_service_get_connected (CmService *service);
 
 gboolean cm_service_set_passphrase (CmService *service, const char* passphrase);
+void cm_service_set_order (CmService *service, guint order);
 
 #endif

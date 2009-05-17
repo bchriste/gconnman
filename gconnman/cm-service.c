@@ -39,13 +39,14 @@ struct _CmServicePrivate
   DBusGProxy *proxy;
   gchar *path;
 
+  guint order;
   gchar *state;
   gchar *name;
   gchar *type;
   gchar *mode;
   gchar *security;
   gchar *passphrase;
-  uint strength;
+  guint strength;
   gboolean favorite;
 
   gboolean connected;
@@ -254,7 +255,8 @@ service_get_properties_call_notify (DBusGProxy *proxy,
 }
 
 CmService *
-internal_service_new (DBusGProxy *proxy, const gchar *path, GError **error)
+internal_service_new (DBusGProxy *proxy, const gchar *path, guint order,
+                      GError **error)
 {
   CmService *service;
   CmServicePrivate *priv;
@@ -288,6 +290,8 @@ internal_service_new (DBusGProxy *proxy, const gchar *path, GError **error)
     g_object_unref (service);
     return NULL;
   }
+
+  priv->order = order;
 
   dbus_g_proxy_add_signal (
     priv->proxy, "PropertyChanged",
@@ -368,6 +372,13 @@ cm_service_set_passphrase (CmService *service, const gchar *passphrase)
   g_value_unset (&value);
 
   return ret;
+}
+
+void
+cm_service_set_order (CmService *service, guint order)
+{
+  CmServicePrivate *priv = service->priv;
+  priv->order = order;
 }
 
 const char *
@@ -695,6 +706,26 @@ cm_service_is_same (const CmService *service, const gchar *path)
 {
   CmServicePrivate *priv = service->priv;
   return !strcmp (priv->path, path);
+}
+
+gint
+cm_service_compare_services (CmService *first, CmService *second)
+{
+  CmServicePrivate *first_priv = first->priv;
+  CmServicePrivate *second_priv = second->priv;
+
+  if (first_priv->order > second_priv->order)
+  {
+    return -1;
+  }
+  else if (first_priv->order == second_priv->order)
+  {
+    return 0;
+  }
+  else if (first->priv->order < second_priv->order)
+  {
+    return 1;
+  }
 }
 
 /*****************************************************************************
