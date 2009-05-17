@@ -37,6 +37,7 @@ G_DEFINE_TYPE (CmService, service, G_TYPE_OBJECT);
 struct _CmServicePrivate
 {
   DBusGProxy *proxy;
+  gchar *path;
 
   gchar *state;
   gchar *name;
@@ -268,6 +269,15 @@ internal_service_new (DBusGProxy *proxy, const gchar *path, GError **error)
 
   priv = service->priv;
 
+  priv->path = g_strdup (path);
+  if (!priv->path)
+  {
+    g_set_error (error, SERVICE_ERROR, SERVICE_ERROR_NO_MEMORY,
+                 "Unable to allocate service path.");
+    g_object_unref (service);
+    return NULL;
+  }
+
   priv->proxy = dbus_g_proxy_new_from_proxy (
     proxy, CONNMAN_SERVICE_INTERFACE, path);
   if (!priv->proxy)
@@ -391,11 +401,11 @@ cm_service_get_connected (CmService *service)
 }
 
 const gchar *
-cm_service_get_object_path (CmService *service)
+cm_service_get_path (CmService *service)
 {
   CmServicePrivate *priv = service->priv;
 
-  return dbus_g_proxy_get_path (priv->proxy);
+  return priv->path;
 }
 
 static void
@@ -602,7 +612,7 @@ cm_service_move_before (CmService *service, CmService *before)
 {
   CmServicePrivate *priv = service->priv;
   GError *error = NULL;
-  const gchar *path = cm_service_get_object_path (before);
+  const gchar *path = cm_service_get_path (before);
 
   g_print ("%s:%s\n", __FUNCTION__, cm_service_get_name (service));
 
@@ -655,7 +665,7 @@ cm_service_move_after (CmService *service, CmService *after)
 {
   CmServicePrivate *priv = service->priv;
   GError *error = NULL;
-  const gchar *path = cm_service_get_object_path (after);
+  const gchar *path = cm_service_get_path (after);
 
   g_print ("%s:%s\n", __FUNCTION__, cm_service_get_name (service));
 
@@ -732,6 +742,7 @@ service_finalize (GObject *object)
   g_free (priv->type);
   g_free (priv->mode);
   g_free (priv->security);
+  g_free (priv->path);
 
   G_OBJECT_CLASS (service_parent_class)->finalize (object);
 }
@@ -740,6 +751,7 @@ static void
 service_init (CmService *self)
 {
   self->priv = CM_SERVICE_GET_PRIVATE (self);
+  self->priv->path = NULL;
   self->priv->state = NULL;
   self->priv->name = NULL;
   self->priv->type = NULL;

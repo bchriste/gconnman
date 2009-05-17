@@ -9,7 +9,7 @@ _pretty_print_service (CmService *service)
            cm_service_get_name (service),
            cm_service_get_type (service),
            cm_service_get_state (service),
-           cm_service_get_object_path (service));
+           cm_service_get_path (service));
 }
 
 void
