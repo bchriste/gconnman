@@ -344,6 +344,7 @@ connection_init (CmConnection *self)
   self->priv->default_connection = FALSE;
   self->priv->type = CONNECTION_UNKNOWN;
   self->priv->strength = 0;
+  self->priv->interface = NULL;
 }
 
 static void

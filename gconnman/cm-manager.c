@@ -505,7 +505,8 @@ manager_finalize (GObject *object)
   if (priv->connection)
     dbus_g_connection_unref (priv->connection);
 
-  g_free (priv->state);
+  if (priv->state)
+    g_free (priv->state);
 
   G_OBJECT_CLASS (manager_parent_class)->finalize (object);
 }
@@ -514,6 +515,8 @@ static void
 manager_init (CmManager *self)
 {
   self->priv = CM_MANAGER_GET_PRIVATE (self);
+  self->priv->state = NULL;
+  self->priv->offline_mode = FALSE;
 }
 
 static void
