@@ -105,5 +105,6 @@ gboolean cm_service_get_connected (CmService *service);
 
 gboolean cm_service_set_passphrase (CmService *service, const char* passphrase);
 void cm_service_set_order (CmService *service, guint order);
+guint cm_service_get_order (CmService *service);
 
 #endif
