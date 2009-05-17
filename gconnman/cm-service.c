@@ -690,6 +690,13 @@ cm_service_move_after (CmService *service, CmService *after)
   return TRUE;
 }
 
+gboolean
+cm_service_is_same (const CmService *service, const gchar *path)
+{
+  CmServicePrivate *priv = service->priv;
+  return !strcmp (priv->path, path);
+}
+
 /*****************************************************************************
  *
  *
