@@ -1,3 +1,13 @@
+Changes in 0.1.12 (17/05/2009)
+
+* Set version stamp to 0.1.12
+* As long as the manager has some connections cm_manager_get_active_connection will always return a value.
+* Update to connman 0.19's D-Bus API and require that version
+* Ethernet services may not have names, in which case return type
+* CmManager's "manager-updated" signal was never emitted - fixed
+* Rename cm_service_get_object_path to cm_service_get_path for consistency
+* Have CmManager keep a sorted copy of the Service list rather than re-creating
+
 Changes in 0.1.11 (14/05/2009)
 
 * Set version stamp to 0.1.11
