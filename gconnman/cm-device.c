@@ -714,7 +714,7 @@ cm_device_type_to_string (CmDeviceType type)
     return "Wireless";
 
   case DEVICE_WIMAX:
-    return "WiMax";
+    return "WiMAX";
 
   case DEVICE_BLUETOOTH:
     return "Bluetooth";

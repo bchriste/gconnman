@@ -407,7 +407,7 @@ cm_connection_type_to_string (CmConnectionType type)
     return "Wireless";
 
   case CONNECTION_WIMAX:
-    return "WiMax";
+    return "WiMAX";
 
   case CONNECTION_BLUETOOTH:
     return "Bluetooth";
