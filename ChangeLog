@@ -1,3 +1,6 @@
+Changes in 0.1.13 (18/05/2009)
+* Shameful brown-bag release - fix a potential infinite loop
+
 Changes in 0.1.12 (17/05/2009)
 
 * Set version stamp to 0.1.12
