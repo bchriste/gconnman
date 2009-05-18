@@ -467,6 +467,7 @@ cm_manager_get_active_connection (CmManager *manager)
     {
       return tmp;
     }
+    connections = connections->next;
   }
 
   /* No connection marked default, return first connection */
