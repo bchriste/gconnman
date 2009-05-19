@@ -99,21 +99,6 @@ manager_find_connection (CmManager *manager, const gchar *path)
   return NULL;
 }
 
-static CmService *
-manager_find_service (CmManager *manager, const gchar *path)
-{
-  CmManagerPrivate *priv = manager->priv;
-  GList *tmp = priv->services;
-  while (tmp)
-  {
-    CmService *service = tmp->data;
-    if (cm_service_is_same (service, path))
-      return service;
-    tmp = tmp->next;
-  }
-  return NULL;
-}
-
 static void
 manager_update_property (const gchar *key, GValue *value, CmManager *manager)
 {
@@ -178,35 +163,33 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
     return;
   }
 
+  /*
+   * We have to completely refresh this list each time it is updated.
+   * The list we receive from connman can be completely different to
+   * the last even if it contains only the same Services
+   */
   if (!strcmp ("Services", key))
   {
     GPtrArray *services = g_value_get_boxed (value);
     gint i;
     const gchar *path = NULL;
+    GError *error = NULL;
 
     for (i = 0; i < services->len; i++)
     {
       path = g_ptr_array_index (services, i);
-      CmService *service = manager_find_service (manager, path);
+      g_print ("Adding new service: %s", path);
+
+      CmService *service = internal_service_new (priv->proxy, path, i, &error);
+
       if (!service)
       {
-        GError *error = NULL;
-        g_print ("New service found: %s\n", path);
-        service = internal_service_new (priv->proxy, path, i, &error);
-        if (!service)
-        {
-          g_print ("service_new failed in %s: %s\n", __FUNCTION__,
-            error->message);
-          g_clear_error (&error);
-          continue;
-        }
-        priv->services = g_list_append (priv->services, service);
+        g_print ("service_new failed in %s: %s\n", __FUNCTION__,
+                 error->message);
+        g_clear_error (&error);
+        continue;
       }
-      else
-      {
-        /* Already know about this service, update order */
-        cm_service_set_order (service, i);
-      }
+      priv->services = g_list_append (priv->services, service);
     }
     /* Before we emit signal, sort service list */
     priv->services = g_list_sort (priv->services,
