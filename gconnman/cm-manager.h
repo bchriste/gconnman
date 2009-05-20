@@ -80,7 +80,7 @@ CmService *cm_manager_get_active_service (CmManager *manager);
 CmConnection *cm_manager_get_active_connection (CmManager *manager);
 
 gboolean cm_manager_refresh (CmManager *manager);
-void cm_manager_set_offline_mode (CmManager *manager, gboolean offline);
+gboolean cm_manager_set_offline_mode (CmManager *manager, gboolean offline);
 
 G_END_DECLS
 

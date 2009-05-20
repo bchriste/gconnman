@@ -46,6 +46,12 @@ struct _CmManagerPrivate
   GList *services;
   GList *connections;
   gchar *state;
+
+  DBusGProxyCall *get_properties_proxy_call;
+  DBusGProxyCall *set_property_proxy_call;
+
+  GValue pending_property_value;
+  gchar *pending_property_name;
 };
 
 static void manager_property_change_handler_proxy (DBusGProxy *, const gchar *,
@@ -67,6 +73,16 @@ static void
 manager_emit_updated (CmManager *manager)
 {
   g_signal_emit (manager, manager_signals[SIGNAL_UPDATE], 0 /* detail */);
+}
+
+static void
+manager_proxy_call_destroy (CmManager *manager, DBusGProxyCall **proxy_call)
+{
+  CmManagerPrivate *priv = manager->priv;
+  if (*proxy_call == NULL)
+    return;
+  dbus_g_proxy_cancel_call (priv->proxy, *proxy_call);
+  *proxy_call = NULL;
 }
 
 static CmDevice *
@@ -366,6 +382,73 @@ cm_manager_new (GError **error)
   return NULL;
 }
 
+static void
+manager_set_property_call_notify (DBusGProxy *proxy,
+                                 DBusGProxyCall *call,
+                                 gpointer data)
+{
+  CmManager *manager = data;
+  CmManagerPrivate *priv = manager->priv;
+  GError *error = NULL;
+
+  if (priv->set_property_proxy_call != call)
+    g_print ("%s call mismatch!\n", __FUNCTION__);
+
+  priv->set_property_proxy_call = NULL;
+
+  if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
+  {
+    g_print ("Error calling dbus_g_proxy_end_call in %s on Manager: %s\n",
+             __FUNCTION__, error->message);
+    g_clear_error (&error);
+  }
+  else
+  {
+    manager_update_property (priv->pending_property_name,
+                             &priv->pending_property_value,
+                             manager);
+    manager_emit_updated (manager);
+  }
+
+  g_free (priv->pending_property_name);
+  g_value_unset (&priv->pending_property_value);
+  priv->pending_property_name = NULL;
+
+  g_print ("%s:CmManager\n", __FUNCTION__);
+}
+
+gboolean
+manager_set_property (CmManager *manager, const gchar *property, GValue *value)
+{
+  CmManagerPrivate *priv = manager->priv;
+  GError *error = NULL;
+
+  g_print ("CmManager:%s\n", __FUNCTION__);
+
+  if (priv->set_property_proxy_call)
+    return FALSE;
+
+  priv->pending_property_name = g_strdup (property);
+  g_value_init (&priv->pending_property_value, G_VALUE_TYPE (value));
+  g_value_copy (value, &priv->pending_property_value);
+
+  priv->set_property_proxy_call = dbus_g_proxy_begin_call (
+    priv->proxy, "SetProperty",
+    manager_set_property_call_notify, manager, NULL,
+    G_TYPE_STRING, property,
+    G_TYPE_VALUE, value,
+    G_TYPE_INVALID);
+
+  if (!priv->set_property_proxy_call)
+  {
+    g_print ("SetProperty failed %s\n", error ? error->message : "Unknown");
+    g_clear_error (&error);
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
 GList *
 cm_manager_get_devices (CmManager *manager)
 {
@@ -394,11 +477,17 @@ cm_manager_get_offline_mode (CmManager *manager)
   return priv->offline_mode;
 }
 
-void
+gboolean
 cm_manager_set_offline_mode (CmManager *manager, gboolean offline)
 {
-  CmManagerPrivate *priv = manager->priv;
-  priv->offline_mode = offline;
+  GValue value = { 0 };
+  gboolean ret;
+  g_value_init (&value, G_TYPE_BOOLEAN);
+  g_value_set_boolean (&value, offline);
+  ret = manager_set_property (manager, "OfflineMode", &value);
+  g_value_unset (&value);
+  return ret;
+
 }
 
 /*
@@ -483,6 +572,9 @@ manager_finalize (GObject *object)
     G_CALLBACK (manager_property_change_handler_proxy),
     manager);
 
+  manager_proxy_call_destroy (manager, &priv->get_properties_proxy_call);
+  manager_proxy_call_destroy (manager, &priv->set_property_proxy_call);
+
   while (priv->devices)
   {
     g_object_unref (priv->devices->data);
@@ -510,6 +602,8 @@ manager_finalize (GObject *object)
   if (priv->state)
     g_free (priv->state);
 
+  g_free (priv->pending_property_name);
+
   G_OBJECT_CLASS (manager_parent_class)->finalize (object);
 }
 
@@ -519,6 +613,7 @@ manager_init (CmManager *self)
   self->priv = CM_MANAGER_GET_PRIVATE (self);
   self->priv->state = NULL;
   self->priv->offline_mode = FALSE;
+  self->priv->pending_property_name = NULL;
 }
 
 static void
