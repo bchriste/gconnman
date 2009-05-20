@@ -661,6 +661,8 @@ device_finalize (GObject *object)
 
   device_proxy_call_destroy (device, &priv->get_properties_proxy_call);
   device_proxy_call_destroy (device, &priv->propose_scan_proxy_call);
+  device_proxy_call_destroy (device, &priv->join_network_proxy_call);
+  device_proxy_call_destroy (device, &priv->set_property_proxy_call);
 
   while (priv->networks)
   {
