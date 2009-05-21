@@ -69,6 +69,12 @@ enum
 
 static gint manager_signals[SIGNAL_LAST];
 
+static GQuark
+manager_error_quark (void)
+{
+  return g_quark_from_static_string ("manager-error-quark");
+}
+
 static void
 manager_emit_updated (CmManager *manager)
 {
@@ -235,6 +241,38 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
   g_free (tmp);
 }
 
+static void
+manager_get_properties_call_notify (DBusGProxy *proxy,
+                                    DBusGProxyCall *call,
+                                    gpointer data)
+{
+  CmManager *manager = data;
+  CmManagerPrivate *priv = manager->priv;
+  GError *error = NULL;
+  GHashTable *properties = NULL;
+
+  if (priv->get_properties_proxy_call != call)
+    g_print ("%s call mismatch!\n", __FUNCTION__);
+
+  if (!dbus_g_proxy_end_call (
+        proxy, call, &error,
+        /* OUT values */
+        dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE),
+        &properties, G_TYPE_INVALID))
+  {
+    g_print ("Error calling dbus_g_proxy_end_call in %s: %s\n",
+             __FUNCTION__, error->message);
+    g_clear_error (&error);
+    return;
+  }
+
+  g_hash_table_foreach (properties, (GHFunc)manager_update_property, manager);
+  g_hash_table_unref (properties);
+  manager_emit_updated (manager);
+
+  priv->get_properties_proxy_call = NULL;
+}
+
 gboolean
 cm_manager_refresh (CmManager *manager)
 {
@@ -272,33 +310,21 @@ cm_manager_refresh (CmManager *manager)
     G_CALLBACK (manager_property_change_handler_proxy),
     manager, NULL);
 
-  /* Synchronous call for now... */
-  if (!dbus_g_proxy_call (priv->proxy, "GetProperties", &error,
-			  /* IN values */
-			  G_TYPE_INVALID,
-			  /* OUT values */
-			  dbus_g_type_get_map ("GHashTable", G_TYPE_STRING,
-					       G_TYPE_VALUE),
-			  &properties, G_TYPE_INVALID))
-    goto manager_refresh_error;
+  priv->get_properties_proxy_call = dbus_g_proxy_begin_call (
+    priv->proxy, "GetProperties",
+    manager_get_properties_call_notify, manager, NULL,
+    G_TYPE_INVALID);
 
-  g_hash_table_foreach (properties, (GHFunc)manager_update_property, manager);
-  g_hash_table_unref (properties);
-
-  manager_emit_updated (manager);
+  if (!priv->get_properties_proxy_call)
+  {
+    /*g_set_error (&error, MANAGER_ERROR, MANAGER_ERROR_CONNMAN_GET_PROPERTIES,
+                 "Refresh error! Invocation of GetProperties failed.");
+    g_object_unref (manager);*/
+    g_print ("Refresh error! Error invoking GetProperties.");
+    return FALSE;
+  }
 
   return TRUE;
-
-manager_refresh_error:
-  if (error)
-  {
-    g_warning ("Error in %s:\n%s", __FUNCTION__, error->message);
-    g_clear_error (&error);
-  }
-  if (properties)
-    g_hash_table_unref (properties);
-
-  return FALSE;
 }
 
 
@@ -316,12 +342,6 @@ manager_property_change_handler_proxy (DBusGProxy *proxy,
   manager_update_property (key, value, manager);
 
   manager_emit_updated (manager);
-}
-
-static GQuark
-manager_error_quark (void)
-{
-  return g_quark_from_static_string ("manager-error-quark");
 }
 
 gboolean

@@ -64,6 +64,7 @@ struct _CmManagerClass
 typedef enum
 {
   MANAGER_ERROR_NO_CONNMAN, /* DBus failed to connect to Connman service */
+  MANAGER_ERROR_CONNMAN_GET_PROPERTIES, /* GetProperties failed on Manager */
 } CmManagerError;
 
 #define CONNMAN_MANAGER_INTERFACE	CONNMAN_SERVICE ".Manager"
