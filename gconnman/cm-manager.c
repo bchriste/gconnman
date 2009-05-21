@@ -197,6 +197,12 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
     const gchar *path = NULL;
     GError *error = NULL;
 
+    while (priv->services)
+    {
+      g_object_unref (priv->services->data);
+      priv->services = priv->services->next;
+    }
+
     for (i = 0; i < services->len; i++)
     {
       path = g_ptr_array_index (services, i);
