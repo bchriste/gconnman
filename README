@@ -1,7 +1,10 @@
 gconnman is a gobject library for interacting with connman.
 
-gconnman aims to be more than just a thin wrapper around the connman d-bus api.
+*NOTE* - The gconnman API, much like the connman d-bus interface, is constantly
+changing. Once connman 1.0 has been released with a stable API we'll start
+to think about a guaranteed API for gconnman.
 
-gconnman provices GObject wrappers for each of Connman's d-bus objects exposing:
+gconnman aims to be more than just a thin wrapper around the connman d-bus api
+and provides GObject wrappers for each of Connman's d-bus objects exposing:
 * per-property getters/setters and gsignals
 * GObject-like API's for calling connman methods
