@@ -194,7 +194,7 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
     for (i = 0; i < services->len; i++)
     {
       path = g_ptr_array_index (services, i);
-      g_print ("Adding new service: %s", path);
+      g_print ("Adding new service: %s\n", path);
 
       CmService *service = internal_service_new (priv->proxy, path, i, &error);
 
