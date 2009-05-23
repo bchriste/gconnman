@@ -374,13 +374,6 @@ cm_service_set_passphrase (CmService *service, const gchar *passphrase)
   return ret;
 }
 
-void
-cm_service_set_order (CmService *service, guint order)
-{
-  CmServicePrivate *priv = service->priv;
-  priv->order = order;
-}
-
 guint
 cm_service_get_order (CmService *service)
 {
