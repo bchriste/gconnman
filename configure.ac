@@ -5,7 +5,7 @@ AC_PREREQ(2.61)
 # even micro numbers indicate released versions
 m4_define(gconnman_version_major, 0)
 m4_define(gconnman_version_minor, 1)
-m4_define(gconnman_version_micro, 14)
+m4_define(gconnman_version_micro, 15)
 
 m4_define([gconnman_version],
           [gconnman_version_major.gconnman_version_minor.gconnman_version_micro])
