@@ -689,7 +689,12 @@ gboolean
 cm_service_is_same (const CmService *service, const gchar *path)
 {
   CmServicePrivate *priv = service->priv;
-  return !strcmp (priv->path, path);
+  gboolean ret = FALSE;
+
+  if (g_strcmp0 (priv->path, path) == 0)
+    ret = TRUE;
+
+  return ret;
 }
 
 gint
