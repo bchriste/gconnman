@@ -46,6 +46,7 @@ struct _CmManagerPrivate
   GList *services;
   GList *connections;
   gchar *state;
+  gchar *policy;
 
   DBusGProxyCall *get_properties_proxy_call;
   DBusGProxyCall *set_property_proxy_call;
@@ -64,6 +65,7 @@ enum
   SIGNAL_DEVICES_CHANGED,
   SIGNAL_SERVICES_CHANGED,
   SIGNAL_CONNECTIONS_CHANGED,
+  SIGNAL_POLICY_CHANGED,
   SIGNAL_LAST
 };
 
@@ -238,6 +240,14 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
     g_free (priv->state);
     priv->state = g_strdup (g_value_get_string (value));
     g_signal_emit (manager, manager_signals[SIGNAL_STATE_CHANGED], 0);
+    return;
+  }
+
+  if (!strcmp ("Policy", key))
+  {
+    g_free (priv->policy);
+    priv->policy = g_strdup (g_value_get_string (value));
+    g_signal_emit (manager, manager_signals[SIGNAL_POLICY_CHANGED], 0);
     return;
   }
 
@@ -508,12 +518,13 @@ cm_manager_set_offline_mode (CmManager *manager, gboolean offline)
 {
   GValue value = { 0 };
   gboolean ret;
+
   g_value_init (&value, G_TYPE_BOOLEAN);
   g_value_set_boolean (&value, offline);
   ret = manager_set_property (manager, "OfflineMode", &value);
   g_value_unset (&value);
-  return ret;
 
+  return ret;
 }
 
 /*
@@ -579,6 +590,27 @@ cm_manager_get_state (CmManager *manager)
   return priv->state;
 }
 
+const gchar *
+cm_manager_get_policy (CmManager *manager)
+{
+  CmManagerPrivate *priv = manager->priv;
+  return priv->policy;
+}
+
+gboolean
+cm_manager_set_policy (CmManager *manager, gchar *policy)
+{
+  GValue value = { 0 };
+  gboolean ret;
+
+  g_value_init (&value, G_TYPE_STRING);
+  g_value_set_string (&value, policy);
+  ret = manager_set_property (manager, "Policy", &value);
+  g_value_unset (&value);
+
+  return ret;
+}
+
 /*****************************************************************************
  *
  *
@@ -625,9 +657,8 @@ manager_finalize (GObject *object)
   if (priv->connection)
     dbus_g_connection_unref (priv->connection);
 
-  if (priv->state)
-    g_free (priv->state);
-
+  g_free (priv->state);
+  g_free (priv->policy);
   g_free (priv->pending_property_name);
 
   G_OBJECT_CLASS (manager_parent_class)->finalize (object);
@@ -638,6 +669,7 @@ manager_init (CmManager *self)
 {
   self->priv = CM_MANAGER_GET_PRIVATE (self);
   self->priv->state = NULL;
+  self->priv->policy = NULL;
   self->priv->offline_mode = FALSE;
   self->priv->pending_property_name = NULL;
 }

@@ -76,12 +76,14 @@ GList *cm_manager_get_devices (CmManager *manager);
 GList *cm_manager_get_connections (CmManager *manager);
 GList *cm_manager_get_services (CmManager *manager);
 gboolean cm_manager_get_offline_mode (CmManager *manager);
+gboolean cm_manager_set_offline_mode (CmManager *manager, gboolean offline);
 const gchar *cm_manager_get_state (CmManager *manager);
 CmService *cm_manager_get_active_service (CmManager *manager);
 CmConnection *cm_manager_get_active_connection (CmManager *manager);
+const gchar *cm_manager_get_policy (CmManager *manager);
+gboolean cm_manager_set_policy (CmManager *manager, gchar *policy);
 
 gboolean cm_manager_refresh (CmManager *manager);
-gboolean cm_manager_set_offline_mode (CmManager *manager, gboolean offline);
 
 G_END_DECLS
 
