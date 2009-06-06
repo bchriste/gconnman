@@ -64,6 +64,8 @@ struct _CmDevicePrivate
   gchar *policy;
   gboolean powered;
   gchar *ipv4_method;
+  gchar *address;
+  guint scan_interval;
 
   DBusGProxyCall *get_properties_proxy_call;
   DBusGProxyCall *propose_scan_proxy_call;
@@ -222,6 +224,19 @@ device_update_property (const gchar *key, GValue *value, CmDevice *device)
   {
     g_free (priv->ipv4_method);
     priv->ipv4_method = g_strdup (g_value_get_string (value));
+    return;
+  }
+
+  if (!strcmp ("ScanInterval", key))
+  {
+    priv->scan_interval = g_value_get_uint (value);
+    return;
+  }
+
+  if (!strcmp ("Address", key))
+  {
+    g_free (priv->address);
+    priv->address = g_strdup (g_value_get_string (value));
     return;
   }
 
@@ -538,6 +553,34 @@ cm_device_set_powered (CmDevice *device, gboolean powered)
   return ret;
 }
 
+gchar *
+cm_device_get_address (CmDevice *device)
+{
+  CmDevicePrivate *priv = device->priv;
+  return priv->address;
+}
+
+guint
+cm_device_get_scan_interval (CmDevice *device)
+{
+  CmDevicePrivate *priv = device->priv;
+  return priv->scan_interval;
+}
+
+gboolean
+cm_device_set_scan_interval (CmDevice *device, guint interval)
+{
+  GValue value = { 0 };
+  gboolean ret;
+
+  g_value_init (&value, G_TYPE_UINT);
+  g_value_set_uint (&value, interval);
+  ret = device_set_property (device, "ScanInterval", &value);
+  g_value_unset (&value);
+
+  return ret;
+}
+
 gboolean
 cm_device_get_powered (const CmDevice *device)
 {
@@ -673,6 +716,7 @@ device_finalize (GObject *object)
   g_free (priv->path);
   g_free (priv->policy);
   g_free (priv->ipv4_method);
+  g_free (priv->address);
   g_free (priv->iface);
   g_free (priv->name);
 
@@ -686,6 +730,13 @@ static void
 device_init (CmDevice *self)
 {
   self->priv = CM_DEVICE_GET_PRIVATE (self);
+  self->priv->path = NULL;
+  self->priv->policy = NULL;
+  self->priv->ipv4_method = NULL;
+  self->priv->address = NULL;
+  self->priv->iface = NULL;
+  self->priv->name = NULL;
+  self->priv->scan_interval = 0;
 }
 
 static void
