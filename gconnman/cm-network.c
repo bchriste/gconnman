@@ -70,6 +70,7 @@ struct _CmNetworkPrivate
   gchar *mode;
   gchar *security;
   gchar *passphrase;
+  gchar *address;
   CmNetworkInfoMask flags;
 
   gulong last_update;
@@ -237,6 +238,13 @@ network_update_property (const gchar *key, GValue *value, CmNetwork *network)
     priv->name = g_strdup (g_value_get_string (value));
     priv->flags |= NETWORK_INFO_NAME;
     return;
+  }
+
+  if (!strcmp ("Address", key))
+  {
+    g_free (priv->address);
+    priv->address = g_strdup (g_value_get_string (value));
+    priv->flags |= NETWORK_INFO_ADDRESS;
   }
 
   tmp = g_strdup_value_contents (value);
@@ -672,6 +680,20 @@ cm_network_get_device (CmNetwork *network)
   return priv->device;
 }
 
+gchar *
+cm_network_get_mode (CmNetwork *network)
+{
+  CmNetworkPrivate *priv = network->priv;
+  return priv->mode;
+}
+
+gchar *
+cm_network_get_address (CmNetwork *network)
+{
+  CmNetworkPrivate *priv = network->priv;
+  return priv->mode;
+}
+
 
 /*****************************************************************************
  *
@@ -724,6 +746,7 @@ network_finalize (GObject *object)
   g_free (priv->path);
   g_free (priv->security);
   g_free (priv->passphrase);
+  g_free (priv->address);
   g_free (priv->mode);
 
   G_OBJECT_CLASS (network_parent_class)->finalize (object);
@@ -733,6 +756,14 @@ static void
 network_init (CmNetwork *self)
 {
   self->priv = CM_NETWORK_GET_PRIVATE (self);
+  self->priv->name = NULL;
+  self->priv->ssid = NULL;
+  self->priv->ssid_printable = NULL;
+  self->priv->path = NULL;
+  self->priv->security = NULL;
+  self->priv->passphrase = NULL;
+  self->priv->address = NULL;
+  self->priv->address = NULL;
 }
 
 static void

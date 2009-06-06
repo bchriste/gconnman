@@ -78,6 +78,7 @@ typedef enum
   NETWORK_INFO_SECURITY   = 1 << 5,
   NETWORK_INFO_PASSPHRASE = 1 << 6,
   NETWORK_INFO_MODE       = 1 << 7,
+  NETWORK_INFO_ADDRESS    = 1 << 8,
 } CmNetworkInfoMask;
 
 /* debug */
@@ -99,5 +100,7 @@ gboolean cm_network_has_passphrase (const CmNetwork *network);
 gint cm_network_get_passphrase_length (const CmNetwork *network);
 CmDevice *cm_network_get_device (CmNetwork *network);
 gboolean cm_network_set_passphrase (CmNetwork *network, const gchar *passphrase);
+gchar *cm_network_get_mode (CmNetwork *network);
+gchar *cm_network_get_address (CmNetwork *network);
 
 #endif
