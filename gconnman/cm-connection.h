@@ -30,6 +30,8 @@ typedef struct _CmConnectionClass CmConnectionClass;
 typedef struct _CmConnectionPrivate CmConnectionPrivate;
 
 #include <gconnman/gconnman.h>
+#include <gconnman/cm-device.h>
+#include <gconnman/cm-network.h>
 
 G_BEGIN_DECLS
 
@@ -78,16 +80,19 @@ typedef enum
   CONNECTION_ETHERNET,
 } CmConnectionType;
 
-
-CmConnectionType cm_connection_get_type (const CmConnection *connection);
 const gchar *cm_connection_type_to_string (CmConnectionType type);
 void cm_connection_free (CmConnection *connection);
 gboolean cm_connection_is_same (const CmConnection *connection, const gchar *path);
 
+CmConnectionType cm_connection_get_type (const CmConnection *connection);
 const gchar *cm_connection_get_interface (CmConnection *connection);
 const gchar *cm_connection_get_path (CmConnection *connection);
 guint cm_connection_get_strength (CmConnection *connection);
 gboolean cm_connection_get_default (CmConnection *connection);
+CmDevice *cm_connection_get_device (CmConnection *connection);
+CmNetwork *cm_connection_get_network (CmConnection *connection);
+gchar *cm_connection_get_ipv4_method (CmConnection *connection);
+gchar *cm_connection_get_ipv4_address (CmConnection *connection);
 
 G_END_DECLS
 

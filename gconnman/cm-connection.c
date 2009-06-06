@@ -54,6 +54,10 @@ struct _CmConnectionPrivate
   gchar *interface;
   guint strength;
   gboolean default_connection;
+  CmDevice *device;
+  CmNetwork *network;
+  gchar *ipv4_method;
+  gchar *ipv4_address;
 
   DBusGProxyCall *get_properties_proxy_call;
 
@@ -70,6 +74,10 @@ enum
   SIGNAL_STRENGTH_CHANGED,
   SIGNAL_DEFAULT_CHANGED,
   SIGNAL_TYPE_CHANGED,
+  SIGNAL_IPV4_METHOD_CHANGED,
+  SIGNAL_IPV4_ADDRESS_CHANGED,
+  SIGNAL_DEVICE_CHANGED,
+  SIGNAL_NETWORK_CHANGED,
   SIGNAL_LAST
 };
 
@@ -147,6 +155,52 @@ connection_update_property (const gchar *key, GValue *value, CmConnection *conne
     }
     g_signal_emit (connection, connection_signals[SIGNAL_TYPE_CHANGED], 0);
     return;
+  }
+
+  if (!strcmp ("IPv4.Method", key))
+  {
+    g_free (priv->ipv4_method);
+    priv->ipv4_method = g_strdup (g_value_get_string (value));
+    g_signal_emit (connection, connection_signals[SIGNAL_IPV4_METHOD_CHANGED], 0);
+  }
+
+  if (!strcmp ("IPv4.Address", key))
+  {
+    g_free (priv->ipv4_address);
+    priv->ipv4_address = g_strdup (g_value_get_string (value));
+    g_signal_emit (connection, connection_signals[SIGNAL_IPV4_ADDRESS_CHANGED], 0);
+  }
+
+  if (!strcmp ("Device", key))
+  {
+    GError *error = NULL;
+    gchar *path = g_strdup (g_value_get_string (value));
+
+    priv->device = internal_device_new (priv->proxy, path, &error);
+    if (!priv->device)
+    {
+      g_print ("device_new failed in %s: %s\n", __FUNCTION__, error->message);
+      g_clear_error (&error);
+    }
+
+    g_signal_emit (connection, connection_signals[SIGNAL_DEVICE_CHANGED], 0);
+    g_free (path);
+  }
+
+  if (!strcmp ("Network", key))
+  {
+    GError *error = NULL;
+    gchar *path = g_strdup (g_value_get_string (value));
+
+    priv->network = internal_network_new (priv->proxy, priv->device, path, &error);
+    if (!priv->network)
+    {
+      g_print ("network_new failed in %s: %s\n", __FUNCTION__, error->message);
+      g_clear_error (&error);
+    }
+
+    g_signal_emit (connection, connection_signals[SIGNAL_NETWORK_CHANGED], 0);
+    g_free (path);
   }
 
   tmp = g_strdup_value_contents (value);
@@ -300,12 +354,35 @@ cm_connection_is_same (const CmConnection *connection, const gchar *path)
   return !strcmp (priv->path, path);
 }
 
-
 CmConnectionType
 cm_connection_get_type (const CmConnection *connection)
 {
   CmConnectionPrivate *priv = connection->priv;
   return priv->type;
+}
+
+CmDevice *
+cm_connection_get_device (CmConnection *connection)
+{
+  return connection->priv->device;
+}
+
+CmNetwork *
+cm_connection_get_network (CmConnection *connection)
+{
+  return connection->priv->network;
+}
+
+gchar *
+cm_connection_get_ipv4_method (CmConnection *connection)
+{
+  return connection->priv->ipv4_method;
+}
+
+gchar *
+cm_connection_get_ipv4_address (CmConnection *connection)
+{
+  return connection->priv->ipv4_address;
 }
 
 /*****************************************************************************
@@ -330,6 +407,12 @@ connection_finalize (GObject *object)
   connection_proxy_call_destroy (connection, &priv->get_properties_proxy_call);
 
   g_free (priv->interface);
+  g_free (priv->ipv4_method);
+  g_free (priv->ipv4_address);
+  if (priv->network)
+    g_object_unref (priv->network);
+  if (priv->device)
+    g_object_unref (priv->device);
 
   if (priv->proxy)
     g_object_unref (priv->proxy);
@@ -345,6 +428,10 @@ connection_init (CmConnection *self)
   self->priv->type = CONNECTION_UNKNOWN;
   self->priv->strength = 0;
   self->priv->interface = NULL;
+  self->priv->device = NULL;
+  self->priv->network = NULL;
+  self->priv->ipv4_method = NULL;
+  self->priv->ipv4_address = NULL;
 }
 
 static void
