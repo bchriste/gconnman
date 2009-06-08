@@ -104,5 +104,6 @@ guint cm_service_get_strength (CmService *service);
 gboolean cm_service_get_favorite (CmService *service);
 gboolean cm_service_get_connected (CmService *service);
 guint cm_service_get_order (CmService *service);
+void cm_service_set_order (CmService *service, guint order);
 
 #endif

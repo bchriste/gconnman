@@ -365,6 +365,13 @@ cm_service_get_order (CmService *service)
   return priv->order;
 }
 
+void
+cm_service_set_order (CmService *service, guint order)
+{
+  CmServicePrivate *priv = service->priv;
+  priv->order = order;
+}
+
 const char *
 cm_service_get_type (CmService *service)
 {
