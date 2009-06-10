@@ -552,13 +552,20 @@ CmService *
 cm_manager_get_active_service (CmManager *manager)
 {
   CmManagerPrivate *priv = manager->priv;
-  CmService *active = CM_SERVICE (g_list_first (priv->services)->data);
-  if (!active || !cm_service_get_connected (active))
+  CmService *active = NULL;
+
+  if (priv->services)
   {
-    active = NULL;
+    active = CM_SERVICE (g_list_first (priv->services));
   }
 
-  return active;
+  if (active)
+  {
+    if (cm_service_get_connected (active))
+      return active;
+  }
+
+  return NULL;
 }
 
 /* Return the first connection, unless another connection is marked
