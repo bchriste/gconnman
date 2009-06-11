@@ -104,7 +104,7 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
     GPtrArray *devices = g_value_get_boxed (value);
     gint i;
     const gchar *path = NULL;
-    GList *devices_list;
+    GList *devices_list = NULL;
 
     for (i = 0; i < devices->len; i++)
     {
@@ -133,7 +133,7 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
     GPtrArray *connections = g_value_get_boxed (value);
     gint i;
     const gchar *path = NULL;
-    GList *connections_list;
+    GList *connections_list = NULL;
 
     for (i = 0; i < connections->len; i++)
     {
@@ -162,7 +162,7 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
     GPtrArray *services = g_value_get_boxed (value);
     gint i;
     const gchar *path = NULL;
-    GList *services_list;
+    GList *services_list = NULL;
 
     for (i = 0; i < services->len; i++)
     {

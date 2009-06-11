@@ -686,26 +686,6 @@ cm_service_is_same (const CmService *first, const CmService *second)
   return ret;
 }
 
-gint
-cm_service_compare_services (CmService *first, CmService *second)
-{
-  CmServicePrivate *first_priv = first->priv;
-  CmServicePrivate *second_priv = second->priv;
-
-  if (first_priv->order > second_priv->order)
-  {
-    return -1;
-  }
-  else if (first_priv->order == second_priv->order)
-  {
-    return 0;
-  }
-  else if (first->priv->order < second_priv->order)
-  {
-    return 1;
-  }
-}
-
 /*****************************************************************************
  *
  *
