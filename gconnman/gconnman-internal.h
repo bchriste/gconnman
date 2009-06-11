@@ -13,7 +13,7 @@ CmNetwork *internal_network_new (DBusGProxy *proxy, CmDevice *device,
 CmDevice *internal_device_new (DBusGProxy *proxy, const gchar *path,
                                GError **error);
 CmService *internal_service_new (DBusGProxy *proxy, const gchar *path,
-				 guint order, GError **error);
+				 GError **error);
 CmConnection *internal_connection_new (DBusGProxy *proxy, const gchar *path,
                                        GError **error);
 

@@ -239,7 +239,7 @@ service_get_properties_call_notify (DBusGProxy *proxy,
 }
 
 CmService *
-internal_service_new (DBusGProxy *proxy, const gchar *path, guint order,
+internal_service_new (DBusGProxy *proxy, const gchar *path,
                       GError **error)
 {
   CmService *service;

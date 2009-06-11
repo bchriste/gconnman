@@ -93,57 +93,6 @@ manager_proxy_call_destroy (CmManager *manager, DBusGProxyCall **proxy_call)
   *proxy_call = NULL;
 }
 
-static CmDevice *
-manager_find_device (CmManager *manager, const gchar *path)
-{
-  CmManagerPrivate *priv = manager->priv;
-  GList *tmp = priv->devices;
-
-  while (tmp)
-  {
-    CmDevice *device = tmp->data;
-    if (cm_device_is_same (device, path))
-      return device;
-    tmp = tmp->next;
-  }
-
-  return NULL;
-}
-
-static CmConnection *
-manager_find_connection (CmManager *manager, const gchar *path)
-{
-  CmManagerPrivate *priv = manager->priv;
-  GList *tmp = priv->connections;
-
-  while (tmp)
-  {
-    CmConnection *connection = tmp->data;
-    if (cm_connection_is_same (connection, path))
-      return connection;
-    tmp = tmp->next;
-  }
-
-  return NULL;
-}
-
-static CmService *
-manager_find_service (CmManager *manager, const gchar *path)
-{
-  CmManagerPrivate *priv = manager->priv;
-  GList *tmp = priv->services;
-
-  while (tmp)
-  {
-    CmService *service = tmp->data;
-    if (cm_service_is_same (service, path))
-      return service;
-    tmp = tmp->next;
-  }
-
-  return NULL;
-}
-
 static void
 manager_update_property (const gchar *key, GValue *value, CmManager *manager)
 {
@@ -155,26 +104,26 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
     GPtrArray *devices = g_value_get_boxed (value);
     gint i;
     const gchar *path = NULL;
+    GList *devices_list;
 
     for (i = 0; i < devices->len; i++)
     {
       path = g_ptr_array_index (devices, i);
-      CmDevice *device = manager_find_device (manager, path);
+      CmDevice *device;
+      GError *error = NULL;
+      g_print ("New device found: %s\n", path);
+      device = internal_device_new (priv->proxy, path, &error);
       if (!device)
       {
-        GError *error = NULL;
-	g_print ("New device found: %s\n", path);
-	device = internal_device_new (priv->proxy, path, &error);
-	if (!device)
-	{
-	  g_print ("device_new failed in %s: %s\n", __FUNCTION__,
-            error->message);
-          g_clear_error (&error);
-	  continue;
-	}
-	priv->devices = g_list_append (priv->devices, device);
+        g_print ("device_new failed in %s: %s\n", __FUNCTION__,
+                 error->message);
+        g_clear_error (&error);
+        continue;
       }
+      devices_list = g_list_append (devices_list, device);
     }
+    g_list_free (priv->devices);
+    priv->devices = devices_list;
     g_signal_emit (manager, manager_signals[SIGNAL_DEVICES_CHANGED], 0);
     return;
   }
@@ -184,26 +133,26 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
     GPtrArray *connections = g_value_get_boxed (value);
     gint i;
     const gchar *path = NULL;
+    GList *connections_list;
 
     for (i = 0; i < connections->len; i++)
     {
       path = g_ptr_array_index (connections, i);
-      CmConnection *connection = manager_find_connection (manager, path);
+      CmConnection *connection;
+      GError *error = NULL;
+      g_print ("New connection found: %s\n", path);
+      connection = internal_connection_new (priv->proxy, path, &error);
       if (!connection)
       {
-        GError *error = NULL;
-        g_print ("New connection found: %s\n", path);
-        connection = internal_connection_new (priv->proxy, path, &error);
-        if (!connection)
-        {
-          g_print ("connection_new failed in %s: %s\n", __FUNCTION__,
-                   error->message);
-          g_clear_error (&error);
-          continue;
-        }
-        priv->connections = g_list_append (priv->connections, connection);
+        g_print ("connection_new failed in %s: %s\n", __FUNCTION__,
+                 error->message);
+        g_clear_error (&error);
+        continue;
       }
+      connections_list = g_list_append (connections_list, connection);
     }
+    g_list_free (priv->connections);
+    priv->connections = connections_list;
     g_signal_emit (manager, manager_signals[SIGNAL_CONNECTIONS_CHANGED], 0);
     return;
   }
@@ -213,34 +162,26 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
     GPtrArray *services = g_value_get_boxed (value);
     gint i;
     const gchar *path = NULL;
+    GList *services_list;
 
     for (i = 0; i < services->len; i++)
     {
       path = g_ptr_array_index (services, i);
-      CmService *service = manager_find_service (manager, path);
+      CmService *service;
+      GError *error = NULL;
+      g_print ("New service found: %s\n", path);
+      service = internal_service_new (priv->proxy, path, &error);
       if (!service)
       {
-	GError *error = NULL;
-	g_print ("New service found: %s\n", path);
-	service = internal_service_new (priv->proxy, path, i, &error);
-	if (!service)
-	{
-	  g_print ("service_new failed in %s: %s\n", __FUNCTION__,
-		   error->message);
-	  g_clear_error (&error);
-	  continue;
-	}
-	priv->services = g_list_append (priv->services, service);
+        g_print ("service_new failed in %s: %s\n", __FUNCTION__,
+                 error->message);
+        g_clear_error (&error);
+        continue;
       }
-      else
-      {
-	cm_service_set_order (service, i);
-      }
+      services_list = g_list_append (services_list, service);
     }
-
-    /* Before we emit signal, sort service list */
-    priv->services = g_list_sort (priv->services,
-                                 (GCompareFunc)cm_service_compare_services);
+    g_list_free (priv->services);
+    priv->services = services_list;
     g_signal_emit (manager, manager_signals[SIGNAL_SERVICES_CHANGED], 0);
     return;
   }
