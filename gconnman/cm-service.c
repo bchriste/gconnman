@@ -674,12 +674,13 @@ cm_service_move_after (CmService *service, CmService *after)
 }
 
 gboolean
-cm_service_is_same (const CmService *service, const gchar *path)
+cm_service_is_same (const CmService *first, const CmService *second)
 {
-  CmServicePrivate *priv = service->priv;
+  CmServicePrivate *first_priv = first->priv;
+  CmServicePrivate *second_priv = second->priv;
   gboolean ret = FALSE;
 
-  if (g_strcmp0 (priv->path, path) == 0)
+  if (g_strcmp0 (first_priv->path, second_priv->path) == 0)
     ret = TRUE;
 
   return ret;
