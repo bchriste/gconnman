@@ -39,7 +39,6 @@ struct _CmServicePrivate
   DBusGProxy *proxy;
   gchar *path;
 
-  guint order;
   gchar *state;
   gchar *name;
   gchar *type;
@@ -275,8 +274,6 @@ internal_service_new (DBusGProxy *proxy, const gchar *path,
     return NULL;
   }
 
-  priv->order = order;
-
   dbus_g_proxy_add_signal (
     priv->proxy, "PropertyChanged",
     G_TYPE_STRING, G_TYPE_VALUE, G_TYPE_INVALID);
@@ -356,20 +353,6 @@ cm_service_set_passphrase (CmService *service, const gchar *passphrase)
   g_value_unset (&value);
 
   return ret;
-}
-
-guint
-cm_service_get_order (CmService *service)
-{
-  CmServicePrivate *priv = service->priv;
-  return priv->order;
-}
-
-void
-cm_service_set_order (CmService *service, guint order)
-{
-  CmServicePrivate *priv = service->priv;
-  priv->order = order;
 }
 
 const char *
