@@ -359,8 +359,6 @@ const char *
 cm_service_get_type (CmService *service)
 {
   CmServicePrivate *priv = service->priv;
-  if (!priv->type)
-    priv->type = g_strdup ("");
   return priv->type;
 }
 
