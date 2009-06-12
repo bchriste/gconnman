@@ -56,6 +56,7 @@ struct _CmServicePrivate
   DBusGProxyCall *get_properties_proxy_call;
   DBusGProxyCall *connect_proxy_call;
   DBusGProxyCall *disconnect_proxy_call;
+  DBusGProxyCall *remove_proxy_call;
   DBusGProxyCall *set_property_proxy_call;
   DBusGProxyCall *move_before_proxy_call;
   DBusGProxyCall *move_after_proxy_call;
@@ -493,6 +494,55 @@ cm_service_connect (CmService *service)
   if (!priv->connect_proxy_call)
   {
     g_print ("Connect failed: %s\n", error ? error->message : "Unknown");
+    g_clear_error (&error);
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+static void
+service_remove_call_notify (DBusGProxy *proxy,
+                            DBusGProxyCall *call,
+                            gpointer data)
+{
+  CmService *service = data;
+  CmServicePrivate *priv = service->priv;
+  GError *error = NULL;
+
+  if (priv->remove_proxy_call != call)
+    g_print ("%s Call mismatch!\n", __FUNCTION__);
+
+  priv->remove_proxy_call = NULL;
+
+  if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
+  {
+    g_print ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
+             __FUNCTION__, cm_service_get_name (service), error->message);
+    g_clear_error (&error);
+  }
+
+  g_print ("%s:%s\n", __FUNCTION__, cm_service_get_name (service));
+}
+
+gboolean
+cm_service_remove (CmService *service)
+{
+  CmServicePrivate *priv = service->priv;
+  GError *error = NULL;
+
+  g_print ("%s:%s\n", __FUNCTION__, cm_service_get_name (service));
+
+  if (priv->remove_proxy_call)
+    return FALSE;
+
+  priv->remove_proxy_call = dbus_g_proxy_begin_call (
+    priv->proxy, "Remove",
+    service_remove_call_notify, service, NULL,
+    G_TYPE_INVALID);
+  if (!priv->remove_proxy_call)
+  {
+    g_print ("Remove failed: %s\n", error ? error->message : "Unknown");
     g_clear_error (&error);
     return FALSE;
   }

@@ -89,6 +89,7 @@ gboolean cm_service_disconnect (CmService *service);
 gboolean cm_service_move_before (CmService *service, CmService *before);
 gboolean cm_service_move_after (CmService *service, CmService *after);
 gboolean cm_service_is_same (const CmService *first, const CmService *second);
+gboolean cm_service_remove (CmService *service);
 
 /* const getters */
 const gchar *cm_service_get_path (CmService *service);
