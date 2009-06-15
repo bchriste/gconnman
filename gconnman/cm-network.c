@@ -709,16 +709,6 @@ network_dispose (GObject *object)
   CmNetwork *network = CM_NETWORK (object);
   CmNetworkPrivate *priv = network->priv;
 
-  dbus_g_proxy_disconnect_signal (
-    priv->proxy, "PropertyChanged",
-    G_CALLBACK (network_property_change_handler_proxy),
-    network);
-
-  network_proxy_call_destroy (network, &priv->get_properties_proxy_call);
-  network_proxy_call_destroy (network, &priv->connect_proxy_call);
-  network_proxy_call_destroy (network, &priv->disconnect_proxy_call);
-  network_proxy_call_destroy (network, &priv->set_property_proxy_call);
-
   if (priv->pending_property_name)
   {
     g_free (priv->pending_property_name);
@@ -727,6 +717,15 @@ network_dispose (GObject *object)
 
   if (priv->proxy)
   {
+    dbus_g_proxy_disconnect_signal (
+      priv->proxy, "PropertyChanged",
+      G_CALLBACK (network_property_change_handler_proxy),
+      network);
+
+    network_proxy_call_destroy (network, &priv->get_properties_proxy_call);
+    network_proxy_call_destroy (network, &priv->connect_proxy_call);
+    network_proxy_call_destroy (network, &priv->disconnect_proxy_call);
+    network_proxy_call_destroy (network, &priv->set_property_proxy_call);
     g_object_unref (priv->proxy);
     priv->proxy = NULL;
   }

@@ -692,20 +692,25 @@ cm_device_join_network (CmDevice *device, const gchar *ssid,
  *****************************************************************************/
 
 static void
-device_finalize (GObject *object)
+device_dispose (GObject *object)
 {
   CmDevice *device = CM_DEVICE (object);
   CmDevicePrivate *priv = device->priv;
 
-  dbus_g_proxy_disconnect_signal (
-    priv->proxy, "PropertyChanged",
-    G_CALLBACK (device_property_change_handler_proxy),
-    device);
+  if (priv->proxy)
+  {
+    dbus_g_proxy_disconnect_signal (
+      priv->proxy, "PropertyChanged",
+      G_CALLBACK (device_property_change_handler_proxy),
+      device);
 
-  device_proxy_call_destroy (device, &priv->get_properties_proxy_call);
-  device_proxy_call_destroy (device, &priv->propose_scan_proxy_call);
-  device_proxy_call_destroy (device, &priv->join_network_proxy_call);
-  device_proxy_call_destroy (device, &priv->set_property_proxy_call);
+    device_proxy_call_destroy (device, &priv->get_properties_proxy_call);
+    device_proxy_call_destroy (device, &priv->propose_scan_proxy_call);
+    device_proxy_call_destroy (device, &priv->join_network_proxy_call);
+    device_proxy_call_destroy (device, &priv->set_property_proxy_call);
+    g_object_unref (priv->proxy);
+    priv->proxy = NULL;
+  }
 
   while (priv->networks)
   {
@@ -713,15 +718,21 @@ device_finalize (GObject *object)
     priv->networks = g_list_delete_link (priv->networks, priv->networks);
   }
 
+  G_OBJECT_CLASS (device_parent_class)->dispose (object);
+}
+
+static void
+device_finalize (GObject *object)
+{
+  CmDevice *device = CM_DEVICE (object);
+  CmDevicePrivate *priv = device->priv;
+
   g_free (priv->path);
   g_free (priv->policy);
   g_free (priv->ipv4_method);
   g_free (priv->address);
   g_free (priv->iface);
   g_free (priv->name);
-
-  if (priv->proxy)
-    g_object_unref (priv->proxy);
 
   G_OBJECT_CLASS (device_parent_class)->finalize (object);
 }
@@ -745,6 +756,7 @@ device_class_init (CmDeviceClass *klass)
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
 
   gobject_class->finalize = device_finalize;
+  gobject_class->dispose = device_dispose;
 
   device_signals[SIGNAL_UPDATE] = g_signal_new (
     "device-updated",

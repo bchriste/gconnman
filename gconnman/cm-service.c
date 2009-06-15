@@ -750,18 +750,6 @@ service_dispose (GObject *object)
   CmService *service = CM_SERVICE (object);
   CmServicePrivate *priv = service->priv;
 
-  dbus_g_proxy_disconnect_signal (
-    priv->proxy, "PropertyChanged",
-    G_CALLBACK (service_property_change_handler_proxy),
-    service);
-
-  service_proxy_call_destroy (service, &priv->get_properties_proxy_call);
-  service_proxy_call_destroy (service, &priv->connect_proxy_call);
-  service_proxy_call_destroy (service, &priv->disconnect_proxy_call);
-  service_proxy_call_destroy (service, &priv->set_property_proxy_call);
-  service_proxy_call_destroy (service, &priv->move_before_proxy_call);
-  service_proxy_call_destroy (service, &priv->move_after_proxy_call);
-
   if (priv->pending_property_name)
   {
     g_free (priv->pending_property_name);
@@ -770,6 +758,18 @@ service_dispose (GObject *object)
 
   if (priv->proxy)
   {
+    dbus_g_proxy_disconnect_signal (
+      priv->proxy, "PropertyChanged",
+      G_CALLBACK (service_property_change_handler_proxy),
+      service);
+
+    service_proxy_call_destroy (service, &priv->get_properties_proxy_call);
+    service_proxy_call_destroy (service, &priv->connect_proxy_call);
+    service_proxy_call_destroy (service, &priv->disconnect_proxy_call);
+    service_proxy_call_destroy (service, &priv->set_property_proxy_call);
+    service_proxy_call_destroy (service, &priv->move_before_proxy_call);
+    service_proxy_call_destroy (service, &priv->move_after_proxy_call);
+
     g_object_unref (priv->proxy);
     priv->proxy = NULL;
   }

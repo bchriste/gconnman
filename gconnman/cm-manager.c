@@ -603,18 +603,10 @@ cm_manager_set_policy (CmManager *manager, gchar *policy)
  *****************************************************************************/
 
 static void
-manager_finalize (GObject *object)
+manager_dispose (GObject *object)
 {
   CmManager *manager = CM_MANAGER (object);
   CmManagerPrivate *priv = manager->priv;
-
-  dbus_g_proxy_disconnect_signal (
-    priv->proxy, "PropertyChanged",
-    G_CALLBACK (manager_property_change_handler_proxy),
-    manager);
-
-  manager_proxy_call_destroy (manager, &priv->get_properties_proxy_call);
-  manager_proxy_call_destroy (manager, &priv->set_property_proxy_call);
 
   while (priv->devices)
   {
@@ -635,10 +627,30 @@ manager_finalize (GObject *object)
   }
 
   if (priv->proxy)
+  {
+    dbus_g_proxy_disconnect_signal (
+    priv->proxy, "PropertyChanged",
+    G_CALLBACK (manager_property_change_handler_proxy),
+    manager);
+
+    manager_proxy_call_destroy (manager, &priv->get_properties_proxy_call);
+    manager_proxy_call_destroy (manager, &priv->set_property_proxy_call);
+
     g_object_unref (priv->proxy);
+    priv->proxy = NULL;
+  }
 
   if (priv->connection)
     dbus_g_connection_unref (priv->connection);
+
+  G_OBJECT_CLASS (manager_parent_class)->dispose (object);
+}
+
+static void
+manager_finalize (GObject *object)
+{
+  CmManager *manager = CM_MANAGER (object);
+  CmManagerPrivate *priv = manager->priv;
 
   g_free (priv->state);
   g_free (priv->policy);
@@ -655,6 +667,9 @@ manager_init (CmManager *self)
   self->priv->policy = NULL;
   self->priv->offline_mode = FALSE;
   self->priv->pending_property_name = NULL;
+  self->priv->services = NULL;
+  self->priv->devices = NULL;
+  self->priv->connections = NULL;
 }
 
 static void
@@ -663,6 +678,7 @@ manager_class_init (CmManagerClass *klass)
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
 
   gobject_class->finalize = manager_finalize;
+  gobject_class->dispose = manager_dispose;
 
   manager_signals[SIGNAL_UPDATE] = g_signal_new (
     "manager-updated",

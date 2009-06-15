@@ -395,28 +395,48 @@ cm_connection_get_ipv4_address (CmConnection *connection)
  *****************************************************************************/
 
 static void
+connection_dispose (GObject *object)
+{
+  CmConnection *connection = CM_CONNECTION (object);
+  CmConnectionPrivate *priv = connection->priv;
+
+  if (priv->proxy)
+  {
+    dbus_g_proxy_disconnect_signal (
+    priv->proxy, "PropertyChanged",
+    G_CALLBACK (connection_property_change_handler_proxy),
+    connection);
+
+    connection_proxy_call_destroy (connection, &priv->get_properties_proxy_call);
+
+    g_object_unref (priv->proxy);
+    priv->proxy = NULL;
+  }
+
+  if (priv->network)
+  {
+    g_object_unref (priv->network);
+    priv->network = NULL;
+  }
+
+  if (priv->device)
+  {
+    g_object_unref (priv->device);
+    priv->device = NULL;
+  }
+
+  G_OBJECT_CLASS (connection_parent_class)->finalize (object);
+}
+
+static void
 connection_finalize (GObject *object)
 {
   CmConnection *connection = CM_CONNECTION (object);
   CmConnectionPrivate *priv = connection->priv;
 
-  dbus_g_proxy_disconnect_signal (
-    priv->proxy, "PropertyChanged",
-    G_CALLBACK (connection_property_change_handler_proxy),
-    connection);
-
-  connection_proxy_call_destroy (connection, &priv->get_properties_proxy_call);
-
   g_free (priv->interface);
   g_free (priv->ipv4_method);
   g_free (priv->ipv4_address);
-  if (priv->network)
-    g_object_unref (priv->network);
-  if (priv->device)
-    g_object_unref (priv->device);
-
-  if (priv->proxy)
-    g_object_unref (priv->proxy);
 
   G_OBJECT_CLASS (connection_parent_class)->finalize (object);
 }
@@ -441,6 +461,7 @@ connection_class_init (CmConnectionClass *klass)
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
 
   gobject_class->finalize = connection_finalize;
+  gobject_class->dispose = connection_dispose;
 
   connection_signals[SIGNAL_UPDATE] = g_signal_new (
     "connection-updated",
