@@ -712,6 +712,14 @@ manager_class_init (CmManagerClass *klass)
     NULL, NULL,
     g_cclosure_marshal_VOID__VOID,
     G_TYPE_NONE, 0);
+  manager_signals[SIGNAL_POLICY_CHANGED] = g_signal_new (
+    "policy-changed",
+    G_TYPE_FROM_CLASS (gobject_class),
+    G_SIGNAL_RUN_LAST,
+    0,
+    NULL, NULL,
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
 
   g_type_class_add_private (gobject_class, sizeof (CmManagerPrivate));
 }
