@@ -111,6 +111,7 @@ connection_update_property (const gchar *key, GValue *value, CmConnection *conne
   CmConnectionPrivate *priv = connection->priv;
   gchar *tmp;
 
+  // FIXME: use intern string
   if (!strcmp ("Interface", key))
   {
     g_free (priv->interface);
@@ -171,7 +172,7 @@ connection_update_property (const gchar *key, GValue *value, CmConnection *conne
     g_signal_emit (connection, connection_signals[SIGNAL_IPV4_ADDRESS_CHANGED], 0);
   }
 
-  if (!strcmp ("Device", key))
+  /*if (!strcmp ("Device", key))
   {
     GError *error = NULL;
     gchar *path = g_strdup (g_value_get_string (value));
@@ -185,7 +186,7 @@ connection_update_property (const gchar *key, GValue *value, CmConnection *conne
 
     g_signal_emit (connection, connection_signals[SIGNAL_DEVICE_CHANGED], 0);
     g_free (path);
-  }
+    }*/
 
   if (!strcmp ("Network", key))
   {
@@ -481,6 +482,30 @@ connection_class_init (CmConnectionClass *klass)
     NULL, NULL,
     g_cclosure_marshal_VOID__VOID,
     G_TYPE_NONE, 0);
+  connection_signals[SIGNAL_IPV4_METHOD_CHANGED] = g_signal_new (
+    "ipv4-method-changed",
+    G_TYPE_FROM_CLASS (gobject_class),
+    G_SIGNAL_RUN_LAST,
+    0,
+    NULL, NULL,
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
+  connection_signals[SIGNAL_IPV4_ADDRESS_CHANGED] = g_signal_new (
+    "ipv4-address-changed",
+    G_TYPE_FROM_CLASS (gobject_class),
+    G_SIGNAL_RUN_LAST,
+    0,
+    NULL, NULL,
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
+  /*connection_signals[SIGNAL_DEVICE_CHANGED] = g_signal_new (
+    "device-changed",
+    G_TYPE_FROM_CLASS (gobject_class),
+    G_SIGNAL_RUN_LAST,
+    0,
+    NULL, NULL,
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);*/
 
   g_type_class_add_private (gobject_class, sizeof (CmConnectionPrivate));
 }
