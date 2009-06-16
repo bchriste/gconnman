@@ -719,6 +719,7 @@ device_init (CmDevice *self)
   self->priv->iface = NULL;
   self->priv->name = NULL;
   self->priv->scan_interval = 0;
+  self->priv->type = DEVICE_UNKNOWN;
 }
 
 static void
