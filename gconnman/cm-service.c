@@ -299,99 +299,6 @@ internal_service_new (DBusGProxy *proxy, const gchar *path,
   return service;
 }
 
-/* Property getters/setters */
-const gchar *
-cm_service_get_state (CmService *service)
-{
-  CmServicePrivate *priv = service->priv;
-  return priv->state;
-}
-
-/* Ethernet services may not have a name set, in which case return the type */
-const gchar *
-cm_service_get_name (const CmService *service)
-{
-  CmServicePrivate *priv = service->priv;
-  if (priv->name == NULL && g_strcmp0 ("ethernet", priv->type) == 0)
-    return priv->type;
-  else
-    return priv->name;
-}
-
-const gchar *
-cm_service_get_mode (CmService *service)
-{
-  CmServicePrivate *priv = service->priv;
-  return priv->mode;
-}
-
-const gchar *
-cm_service_get_security (CmService *service)
-{
-  CmServicePrivate *priv = service->priv;
-  return priv->security;
-}
-
-const gchar *
-cm_service_get_passphrase (CmService *service)
-{
-  CmServicePrivate *priv = service->priv;
-  return priv->passphrase;
-}
-
-gboolean
-cm_service_set_passphrase (CmService *service, const gchar *passphrase)
-{
-  GValue value = { 0 };
-  gboolean ret;
-
-  g_print ("Setting passphrase for %s to %s\n", cm_service_get_name (service),
-           passphrase);
-
-  g_value_init (&value, G_TYPE_STRING);
-  g_value_set_static_string (&value, passphrase);
-  ret = cm_service_set_property (service, "Passphrase", &value);
-  g_value_unset (&value);
-
-  return ret;
-}
-
-const char *
-cm_service_get_type (CmService *service)
-{
-  CmServicePrivate *priv = service->priv;
-  return priv->type;
-}
-
-guint
-cm_service_get_strength (CmService *service)
-{
-  CmServicePrivate *priv = service->priv;
-  return priv->strength;
-}
-
-gboolean
-cm_service_get_favorite (CmService *service)
-{
-  CmServicePrivate *priv = service->priv;
-  return priv->favorite;
-}
-
-gboolean
-cm_service_get_connected (CmService *service)
-{
-  CmServicePrivate *priv = service->priv;
-  return priv->connected;
-}
-
-const gchar *
-cm_service_get_path (CmService *service)
-{
-  CmServicePrivate *priv = service->priv;
-
-  return priv->path;
-}
-
 static void
 service_disconnect_call_notify (DBusGProxy *proxy,
                                 DBusGProxyCall *call,
@@ -734,6 +641,99 @@ cm_service_is_same (const CmService *first, const CmService *second)
     ret = TRUE;
 
   return ret;
+}
+
+/* Property getters/setters */
+const gchar *
+cm_service_get_state (CmService *service)
+{
+  CmServicePrivate *priv = service->priv;
+  return priv->state;
+}
+
+/* Ethernet services may not have a name set, in which case return the type */
+const gchar *
+cm_service_get_name (const CmService *service)
+{
+  CmServicePrivate *priv = service->priv;
+  if (priv->name == NULL && g_strcmp0 ("ethernet", priv->type) == 0)
+    return priv->type;
+  else
+    return priv->name;
+}
+
+const gchar *
+cm_service_get_mode (CmService *service)
+{
+  CmServicePrivate *priv = service->priv;
+  return priv->mode;
+}
+
+const gchar *
+cm_service_get_security (CmService *service)
+{
+  CmServicePrivate *priv = service->priv;
+  return priv->security;
+}
+
+const gchar *
+cm_service_get_passphrase (CmService *service)
+{
+  CmServicePrivate *priv = service->priv;
+  return priv->passphrase;
+}
+
+gboolean
+cm_service_set_passphrase (CmService *service, const gchar *passphrase)
+{
+  GValue value = { 0 };
+  gboolean ret;
+
+  g_print ("Setting passphrase for %s to %s\n", cm_service_get_name (service),
+           passphrase);
+
+  g_value_init (&value, G_TYPE_STRING);
+  g_value_set_static_string (&value, passphrase);
+  ret = cm_service_set_property (service, "Passphrase", &value);
+  g_value_unset (&value);
+
+  return ret;
+}
+
+const char *
+cm_service_get_type (CmService *service)
+{
+  CmServicePrivate *priv = service->priv;
+  return priv->type;
+}
+
+guint
+cm_service_get_strength (CmService *service)
+{
+  CmServicePrivate *priv = service->priv;
+  return priv->strength;
+}
+
+gboolean
+cm_service_get_favorite (CmService *service)
+{
+  CmServicePrivate *priv = service->priv;
+  return priv->favorite;
+}
+
+gboolean
+cm_service_get_connected (CmService *service)
+{
+  CmServicePrivate *priv = service->priv;
+  return priv->connected;
+}
+
+const gchar *
+cm_service_get_path (CmService *service)
+{
+  CmServicePrivate *priv = service->priv;
+
+  return priv->path;
 }
 
 /*****************************************************************************
