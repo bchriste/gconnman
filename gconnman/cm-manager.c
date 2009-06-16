@@ -104,7 +104,12 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
     GPtrArray *devices = g_value_get_boxed (value);
     gint i;
     const gchar *path = NULL;
-    GList *devices_list = NULL;
+
+    while (priv->devices)
+    {
+      g_object_unref (priv->devices->data);
+      priv->devices = g_list_delete_link (priv->devices, priv->devices);
+    }
 
     for (i = 0; i < devices->len; i++)
     {
@@ -120,16 +125,12 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
         g_error_free (error);
         continue;
       }
-      devices_list = g_list_append (devices_list, device);
+      else
+      {
+        priv->devices = g_list_append (priv->devices, device);
+      }
     }
 
-    while (priv->devices)
-    {
-      g_object_unref (priv->devices->data);
-      priv->devices = g_list_delete_link (priv->devices, priv->devices);
-    }
-
-    priv->devices = devices_list;
     g_signal_emit (manager, manager_signals[SIGNAL_DEVICES_CHANGED], 0);
     return;
   }
@@ -139,7 +140,12 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
     GPtrArray *connections = g_value_get_boxed (value);
     gint i;
     const gchar *path = NULL;
-    GList *connections_list = NULL;
+
+    while (priv->connections)
+    {
+      g_object_unref (priv->connections->data);
+      priv->connections = g_list_delete_link (priv->connections, priv->connections);
+    }
 
     for (i = 0; i < connections->len; i++)
     {
@@ -155,16 +161,12 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
         g_error_free (error);
         continue;
       }
-      connections_list = g_list_append (connections_list, connection);
+      else
+      {
+        priv->connections = g_list_append (priv->connections, connection);
+      }
     }
 
-    while (priv->connections)
-    {
-      g_object_unref (priv->connections->data);
-      priv->connections = g_list_delete_link (priv->connections, priv->connections);
-    }
-
-    priv->connections = connections_list;
     g_signal_emit (manager, manager_signals[SIGNAL_CONNECTIONS_CHANGED], 0);
     return;
   }
@@ -174,7 +176,12 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
     GPtrArray *services = g_value_get_boxed (value);
     gint i;
     const gchar *path = NULL;
-    GList *services_list = NULL;
+
+    while (priv->services)
+    {
+      g_object_unref (priv->services->data);
+      priv->services = g_list_delete_link (priv->services, priv->services);
+    }
 
     for (i = 0; i < services->len; i++)
     {
@@ -190,16 +197,12 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
         g_error_free (error);
         continue;
       }
-      services_list = g_list_append (services_list, service);
+      else
+      {
+        priv->services = g_list_append (priv->services, service);
+      }
     }
 
-    while (priv->services)
-    {
-      g_object_unref (priv->services->data);
-      priv->services = g_list_delete_link (priv->services, priv->services);
-    }
-
-    priv->services = services_list;
     g_signal_emit (manager, manager_signals[SIGNAL_SERVICES_CHANGED], 0);
     return;
   }
