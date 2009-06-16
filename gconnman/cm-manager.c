@@ -513,20 +513,18 @@ cm_manager_get_active_service (CmManager *manager)
 
   if (priv->services)
   {
-    active = CM_SERVICE (priv->services->data);
+    active = (CmService *) priv->services->data;
   }
-
-  if (active)
+  else
   {
-    if (cm_service_get_connected (active))
-      return active;
+    active = NULL;
   }
 
-  return NULL;
+  return active;
 }
 
-/* Return the first connection, unless another connection is marked
- * default in which case return that.
+/*
+ * Return the first connection marked as default, or NULL
  */
 CmConnection *
 cm_manager_get_active_connection (CmManager *manager)
@@ -534,34 +532,18 @@ cm_manager_get_active_connection (CmManager *manager)
   CmManagerPrivate *priv = manager->priv;
   GList *connections = priv->connections;
   CmConnection *conn = NULL;
-  CmConnection *tmp = NULL;
 
-  if (connections)
-  {
-    conn = connections->data;
-    /* If first connection is marked default, just return */
-    if (cm_connection_get_default (conn))
-    {
-      return conn;
-    }
-    connections = connections->next;
-  }
-
-  /* Otherwise we want to check whether any of our other connections
-   * are default, if not we just return the first connection found
-   */
   while (connections)
   {
-    tmp = connections->data;
-    if (cm_connection_get_default (tmp))
+    conn = (CmConnection *) connections->data;
+    if (cm_connection_get_default (conn))
     {
-      return tmp;
+        return conn;
     }
     connections = connections->next;
   }
 
-  /* No connection marked default, return first connection */
-  return conn;
+  return NULL;
 }
 
 const gchar *
