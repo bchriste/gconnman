@@ -162,60 +162,48 @@ network_update_property (const gchar *key, GValue *value, CmNetwork *network)
       tmp = g_strdup_value_contents (value);
       g_print ("No SSID for %s\n", tmp);
       g_free (tmp);
-      return;
     }
+    else
+    {
+      ssid_bytes = g_value_get_boxed (value);
 
-    ssid_bytes = g_value_get_boxed (value);
-
-    priv->ssid_len = ssid_bytes->len;
-    priv->ssid = g_new0 (guchar, ssid_bytes->len);
-    for (i = 0; i < priv->ssid_len; i++)
-      priv->ssid[i] = g_array_index (ssid_bytes, guchar, i);
-    priv->ssid_printable = network_printable_ssid_new (
-      priv->ssid, priv->ssid_len);
-    priv->flags |= NETWORK_INFO_SSID;
-
-    return;
+      priv->ssid_len = ssid_bytes->len;
+      priv->ssid = g_new0 (guchar, ssid_bytes->len);
+      for (i = 0; i < priv->ssid_len; i++)
+        priv->ssid[i] = g_array_index (ssid_bytes, guchar, i);
+      priv->ssid_printable = network_printable_ssid_new (
+        priv->ssid, priv->ssid_len);
+      priv->flags |= NETWORK_INFO_SSID;
+    }
   }
-
-  if (!strcmp ("Strength", key))
+  else if (!strcmp ("Strength", key))
   {
     priv->strength = g_value_get_uchar (value);
     priv->flags |= NETWORK_INFO_STRENGTH;
-    return;
   }
-
-  if (!strcmp ("Priority", key))
+  else if (!strcmp ("Priority", key))
   {
     priv->priority = g_value_get_uchar (value);
     priv->flags |= NETWORK_INFO_PRIORITY;
-    return;
   }
-
-  if (!strcmp ("Connected", key))
+  else if (!strcmp ("Connected", key))
   {
     priv->connected = g_value_get_boolean (value);
     priv->flags |= NETWORK_INFO_CONNECTED;
-    return;
   }
-
-  if (!strcmp ("WiFi.Mode", key))
+  else if (!strcmp ("WiFi.Mode", key))
   {
     g_free (priv->mode);
     priv->mode = g_value_dup_string (value);
     priv->flags |= NETWORK_INFO_MODE;
-    return;
   }
-
-  if (!strcmp ("WiFi.Security", key))
+  else if (!strcmp ("WiFi.Security", key))
   {
     g_free (priv->security);
     priv->security = g_value_dup_string (value);
     priv->flags |= NETWORK_INFO_SECURITY;
-    return;
   }
-
-  if (!strcmp ("WiFi.Passphrase", key))
+  else if (!strcmp ("WiFi.Passphrase", key))
   {
     gchar *passphrase = g_value_dup_string (value);
     g_free (priv->passphrase);
@@ -229,28 +217,26 @@ network_update_property (const gchar *key, GValue *value, CmNetwork *network)
       priv->passphrase = NULL;
       priv->flags &= ~NETWORK_INFO_PASSPHRASE;
     }
-    return;
   }
-
-  if (!strcmp ("Name", key))
+  else if (!strcmp ("Name", key))
   {
     g_free (priv->name);
     priv->name = g_value_dup_string (value);
     priv->flags |= NETWORK_INFO_NAME;
-    return;
   }
-
-  if (!strcmp ("Address", key))
+  else if (!strcmp ("Address", key))
   {
     g_free (priv->address);
     priv->address = g_value_dup_string (value);
     priv->flags |= NETWORK_INFO_ADDRESS;
   }
-
-  tmp = g_strdup_value_contents (value);
-  g_print ("Unhandled property on %s: %s = %s\n",
-           cm_network_get_name (network), key, tmp);
-  g_free (tmp);
+  else
+  {
+    tmp = g_strdup_value_contents (value);
+    g_print ("Unhandled property on %s: %s = %s\n",
+             cm_network_get_name (network), key, tmp);
+    g_free (tmp);
+  }
 }
 
 void

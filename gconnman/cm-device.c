@@ -145,30 +145,22 @@ device_update_property (const gchar *key, GValue *value, CmDevice *device)
 	priv->networks = g_list_append (priv->networks, network);
       }
     }
-    return;
   }
-
-  if (!strcmp ("Scanning", key))
+  else if (!strcmp ("Scanning", key))
   {
     priv->scanning = g_value_get_boolean (value);
-    return;
   }
-
-  if (!strcmp ("Name", key))
+  else if (!strcmp ("Name", key))
   {
     g_free (priv->name);
     priv->name = g_value_dup_string (value);
-    return;
   }
-
-  if (!strcmp ("Interface", key))
+  else if (!strcmp ("Interface", key))
   {
     g_free (priv->iface);
     priv->iface = g_value_dup_string (value);
-    return;
   }
-
-  if (!strcmp ("Type", key))
+  else if (!strcmp ("Type", key))
   {
     const gchar *type;
     type = g_value_get_string (value);
@@ -188,52 +180,41 @@ device_update_property (const gchar *key, GValue *value, CmDevice *device)
                cm_device_get_name (device), type);
       priv->type = DEVICE_UNKNOWN;
     }
-    return;
   }
-
-  if (!strcmp ("Priority", key))
+  else if (!strcmp ("Priority", key))
   {
     priv->priority = g_value_get_uchar (value);
-    return;
   }
-
-  if (!strcmp ("Policy", key))
+  else if (!strcmp ("Policy", key))
   {
     g_free (priv->policy);
     priv->policy = g_value_dup_string (value);
-    return;
   }
-
-  if (!strcmp ("Powered", key))
+  else if (!strcmp ("Powered", key))
   {
     priv->powered = g_value_get_boolean (value);
-    return;
   }
-
-  if (!strcmp ("IPv4.Method", key))
+  else if (!strcmp ("IPv4.Method", key))
   {
     g_free (priv->ipv4_method);
     priv->ipv4_method = g_value_dup_string (value);
-    return;
   }
-
-  if (!strcmp ("ScanInterval", key))
+  else if (!strcmp ("ScanInterval", key))
   {
     priv->scan_interval = g_value_get_uint (value);
-    return;
   }
-
-  if (!strcmp ("Address", key))
+  else if (!strcmp ("Address", key))
   {
     g_free (priv->address);
     priv->address = g_value_dup_string (value);
-    return;
   }
-
-  tmp = g_strdup_value_contents (value);
-  g_print ("Unhandled property on %s: %s = %s\n",
-           cm_device_get_name (device), key, tmp);
-  g_free (tmp);
+  else
+  {
+    tmp = g_strdup_value_contents (value);
+    g_print ("Unhandled property on %s: %s = %s\n",
+             cm_device_get_name (device), key, tmp);
+    g_free (tmp);
+  }
 }
 
 

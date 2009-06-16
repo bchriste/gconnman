@@ -117,24 +117,18 @@ connection_update_property (const gchar *key, GValue *value, CmConnection *conne
     g_free (priv->interface);
     priv->interface = g_value_dup_string (value);
     g_signal_emit (connection, connection_signals[SIGNAL_INTERFACE_CHANGED], 0);
-    return;
   }
-
-  if (!strcmp ("Strength", key))
+  else if (!strcmp ("Strength", key))
   {
     priv->strength= g_value_get_uint (value);
     g_signal_emit (connection, connection_signals[SIGNAL_STRENGTH_CHANGED], 0);
-    return;
   }
-
-  if (!strcmp ("Default", key))
+  else if (!strcmp ("Default", key))
   {
     priv->default_connection = g_value_get_boolean (value);
     g_signal_emit (connection, connection_signals[SIGNAL_DEFAULT_CHANGED], 0);
-    return;
   }
-
-  if (!strcmp ("Type", key))
+  else if (!strcmp ("Type", key))
   {
     const gchar *type;
     type = g_value_get_string (value);
@@ -155,24 +149,20 @@ connection_update_property (const gchar *key, GValue *value, CmConnection *conne
       priv->type = CONNECTION_UNKNOWN;
     }
     g_signal_emit (connection, connection_signals[SIGNAL_TYPE_CHANGED], 0);
-    return;
   }
-
-  if (!strcmp ("IPv4.Method", key))
+  else if (!strcmp ("IPv4.Method", key))
   {
     g_free (priv->ipv4_method);
     priv->ipv4_method = g_value_dup_string (value);
     g_signal_emit (connection, connection_signals[SIGNAL_IPV4_METHOD_CHANGED], 0);
   }
-
-  if (!strcmp ("IPv4.Address", key))
+  else if (!strcmp ("IPv4.Address", key))
   {
     g_free (priv->ipv4_address);
     priv->ipv4_address = g_value_dup_string (value);
     g_signal_emit (connection, connection_signals[SIGNAL_IPV4_ADDRESS_CHANGED], 0);
   }
-
-  /*if (!strcmp ("Device", key))
+  /*else if (!strcmp ("Device", key))
   {
     GError *error = NULL;
     gchar *path = g_value_dup_string (value);
@@ -187,8 +177,7 @@ connection_update_property (const gchar *key, GValue *value, CmConnection *conne
     g_signal_emit (connection, connection_signals[SIGNAL_DEVICE_CHANGED], 0);
     g_free (path);
     }*/
-
-  if (!strcmp ("Network", key))
+  else if (!strcmp ("Network", key))
   {
     GError *error = NULL;
     gchar *path = g_value_dup_string (value);
@@ -203,11 +192,13 @@ connection_update_property (const gchar *key, GValue *value, CmConnection *conne
     g_signal_emit (connection, connection_signals[SIGNAL_NETWORK_CHANGED], 0);
     g_free (path);
   }
-
-  tmp = g_strdup_value_contents (value);
-  g_print ("Unhandled property on %s: %s = %s\n",
-           cm_connection_get_interface (connection), key, tmp);
-  g_free (tmp);
+  else
+  {
+    tmp = g_strdup_value_contents (value);
+    g_print ("Unhandled property on %s: %s = %s\n",
+             cm_connection_get_interface (connection), key, tmp);
+    g_free (tmp);
+  }
 }
 
 static void

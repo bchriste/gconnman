@@ -132,10 +132,8 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
     }
 
     g_signal_emit (manager, manager_signals[SIGNAL_DEVICES_CHANGED], 0);
-    return;
   }
-
-  if (!strcmp ("Connections", key))
+  else if (!strcmp ("Connections", key))
   {
     GPtrArray *connections = g_value_get_boxed (value);
     gint i;
@@ -168,10 +166,8 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
     }
 
     g_signal_emit (manager, manager_signals[SIGNAL_CONNECTIONS_CHANGED], 0);
-    return;
   }
-
-  if (!strcmp ("Services", key))
+  else if (!strcmp ("Services", key))
   {
     GPtrArray *services = g_value_get_boxed (value);
     gint i;
@@ -204,36 +200,31 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
     }
 
     g_signal_emit (manager, manager_signals[SIGNAL_SERVICES_CHANGED], 0);
-    return;
   }
-
-  if (!strcmp ("OfflineMode", key))
+  else if (!strcmp ("OfflineMode", key))
   {
     priv->offline_mode = g_value_get_boolean (value);
     g_signal_emit (manager, manager_signals[SIGNAL_OFFLINE_MODE_CHANGED], 0);
-    return;
   }
-
-  if (!strcmp ("State", key))
+  else if (!strcmp ("State", key))
   {
     g_free (priv->state);
     priv->state = g_value_dup_string (value);
     g_signal_emit (manager, manager_signals[SIGNAL_STATE_CHANGED], 0);
-    return;
   }
-
-  if (!strcmp ("Policy", key))
+  else if (!strcmp ("Policy", key))
   {
     g_free (priv->policy);
     priv->policy = g_value_dup_string (value);
     g_signal_emit (manager, manager_signals[SIGNAL_POLICY_CHANGED], 0);
-    return;
   }
-
-  tmp = g_strdup_value_contents (value);
-  g_print ("Unhandled property on Manager: %s = %s\n",
-           key, tmp);
-  g_free (tmp);
+  else
+  {
+    tmp = g_strdup_value_contents (value);
+    g_print ("Unhandled property on Manager: %s = %s\n",
+             key, tmp);
+    g_free (tmp);
+  }
 }
 
 static void

@@ -107,67 +107,54 @@ service_update_property (const gchar *key, GValue *value, CmService *service)
     {
       priv->connected = FALSE;
     }
-    return;
   }
-
-  if (!strcmp ("Name", key))
+  else if (!strcmp ("Name", key))
   {
     g_free (priv->name);
     priv->name = g_value_dup_string (value);
     priv->flags |= SERVICE_INFO_NAME;
-    return;
   }
-
-  if (!strcmp ("Type", key))
+  else if (!strcmp ("Type", key))
   {
     g_free (priv->type);
     priv->type = g_value_dup_string (value);
     priv->flags |= SERVICE_INFO_TYPE;
-    return;
   }
-
-  if (!strcmp ("Mode", key))
+  else if (!strcmp ("Mode", key))
   {
     g_free (priv->mode);
     priv->mode = g_value_dup_string (value);
     priv->flags |= SERVICE_INFO_MODE;
-    return;
   }
-
-  if (!strcmp ("Security", key))
+  else if (!strcmp ("Security", key))
   {
     g_free (priv->security);
     priv->security = g_value_dup_string (value);
     priv->flags |= SERVICE_INFO_SECURITY;
-    return;
   }
-
-  if (!strcmp ("Passphrase", key))
+  else if (!strcmp ("Passphrase", key))
   {
     g_free (priv->passphrase);
     priv->passphrase = g_value_dup_string (value);
     priv->flags |= SERVICE_INFO_PASSPHRASE;
-    return;
   }
-
-  if (!strcmp ("Strength", key))
+  else if (!strcmp ("Strength", key))
   {
     priv->strength = g_value_get_uchar (value);
     priv->flags |= SERVICE_INFO_STRENGTH;
-    return;
   }
-
-  if (!strcmp ("Favorite", key))
+  else if (!strcmp ("Favorite", key))
   {
     priv->favorite = g_value_get_boolean (value);
     priv->flags |= SERVICE_INFO_FAVORITE;
-    return;
   }
-
-  tmp = g_strdup_value_contents (value);
-  g_print ("Unhandled property on %s: %s = %s\n",
-           cm_service_get_name (service), key, tmp);
-  g_free (tmp);
+  else
+  {
+    tmp = g_strdup_value_contents (value);
+    g_print ("Unhandled property on %s: %s = %s\n",
+             cm_service_get_name (service), key, tmp);
+    g_free (tmp);
+  }
 }
 
 static void
