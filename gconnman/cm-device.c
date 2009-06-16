@@ -157,14 +157,14 @@ device_update_property (const gchar *key, GValue *value, CmDevice *device)
   if (!strcmp ("Name", key))
   {
     g_free (priv->name);
-    priv->name = g_strdup (g_value_get_string (value));
+    priv->name = g_value_dup_string (value);
     return;
   }
 
   if (!strcmp ("Interface", key))
   {
     g_free (priv->iface);
-    priv->iface = g_strdup (g_value_get_string (value));
+    priv->iface = g_value_dup_string (value);
     return;
   }
 
@@ -200,7 +200,7 @@ device_update_property (const gchar *key, GValue *value, CmDevice *device)
   if (!strcmp ("Policy", key))
   {
     g_free (priv->policy);
-    priv->policy = g_strdup (g_value_get_string (value));
+    priv->policy = g_value_dup_string (value);
     return;
   }
 
@@ -213,7 +213,7 @@ device_update_property (const gchar *key, GValue *value, CmDevice *device)
   if (!strcmp ("IPv4.Method", key))
   {
     g_free (priv->ipv4_method);
-    priv->ipv4_method = g_strdup (g_value_get_string (value));
+    priv->ipv4_method = g_value_dup_string (value);
     return;
   }
 
@@ -226,7 +226,7 @@ device_update_property (const gchar *key, GValue *value, CmDevice *device)
   if (!strcmp ("Address", key))
   {
     g_free (priv->address);
-    priv->address = g_strdup (g_value_get_string (value));
+    priv->address = g_value_dup_string (value);
     return;
   }
 

@@ -97,7 +97,7 @@ service_update_property (const gchar *key, GValue *value, CmService *service)
   if (!strcmp ("State", key))
   {
     g_free (priv->state);
-    priv->state = g_strdup (g_value_get_string (value));
+    priv->state = g_value_dup_string (value);
     priv->flags |= SERVICE_INFO_STATE;
     if (!strcmp ("ready", priv->state))
     {
@@ -113,7 +113,7 @@ service_update_property (const gchar *key, GValue *value, CmService *service)
   if (!strcmp ("Name", key))
   {
     g_free (priv->name);
-    priv->name = g_strdup (g_value_get_string (value));
+    priv->name = g_value_dup_string (value);
     priv->flags |= SERVICE_INFO_NAME;
     return;
   }
@@ -121,7 +121,7 @@ service_update_property (const gchar *key, GValue *value, CmService *service)
   if (!strcmp ("Type", key))
   {
     g_free (priv->type);
-    priv->type = g_strdup (g_value_get_string (value));
+    priv->type = g_value_dup_string (value);
     priv->flags |= SERVICE_INFO_TYPE;
     return;
   }
@@ -129,7 +129,7 @@ service_update_property (const gchar *key, GValue *value, CmService *service)
   if (!strcmp ("Mode", key))
   {
     g_free (priv->mode);
-    priv->mode = g_strdup (g_value_get_string (value));
+    priv->mode = g_value_dup_string (value);
     priv->flags |= SERVICE_INFO_MODE;
     return;
   }
@@ -137,7 +137,7 @@ service_update_property (const gchar *key, GValue *value, CmService *service)
   if (!strcmp ("Security", key))
   {
     g_free (priv->security);
-    priv->security = g_strdup (g_value_get_string (value));
+    priv->security = g_value_dup_string (value);
     priv->flags |= SERVICE_INFO_SECURITY;
     return;
   }
@@ -145,7 +145,7 @@ service_update_property (const gchar *key, GValue *value, CmService *service)
   if (!strcmp ("Passphrase", key))
   {
     g_free (priv->passphrase);
-    priv->passphrase = g_strdup (g_value_get_string (value));
+    priv->passphrase = g_value_dup_string (value);
     priv->flags |= SERVICE_INFO_PASSPHRASE;
     return;
   }

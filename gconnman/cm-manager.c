@@ -217,7 +217,7 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
   if (!strcmp ("State", key))
   {
     g_free (priv->state);
-    priv->state = g_strdup (g_value_get_string (value));
+    priv->state = g_value_dup_string (value);
     g_signal_emit (manager, manager_signals[SIGNAL_STATE_CHANGED], 0);
     return;
   }
@@ -225,7 +225,7 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
   if (!strcmp ("Policy", key))
   {
     g_free (priv->policy);
-    priv->policy = g_strdup (g_value_get_string (value));
+    priv->policy = g_value_dup_string (value);
     g_signal_emit (manager, manager_signals[SIGNAL_POLICY_CHANGED], 0);
     return;
   }

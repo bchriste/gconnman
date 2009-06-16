@@ -115,7 +115,7 @@ connection_update_property (const gchar *key, GValue *value, CmConnection *conne
   if (!strcmp ("Interface", key))
   {
     g_free (priv->interface);
-    priv->interface = g_strdup (g_value_get_string (value));
+    priv->interface = g_value_dup_string (value);
     g_signal_emit (connection, connection_signals[SIGNAL_INTERFACE_CHANGED], 0);
     return;
   }
@@ -161,21 +161,21 @@ connection_update_property (const gchar *key, GValue *value, CmConnection *conne
   if (!strcmp ("IPv4.Method", key))
   {
     g_free (priv->ipv4_method);
-    priv->ipv4_method = g_strdup (g_value_get_string (value));
+    priv->ipv4_method = g_value_dup_string (value);
     g_signal_emit (connection, connection_signals[SIGNAL_IPV4_METHOD_CHANGED], 0);
   }
 
   if (!strcmp ("IPv4.Address", key))
   {
     g_free (priv->ipv4_address);
-    priv->ipv4_address = g_strdup (g_value_get_string (value));
+    priv->ipv4_address = g_value_dup_string (value);
     g_signal_emit (connection, connection_signals[SIGNAL_IPV4_ADDRESS_CHANGED], 0);
   }
 
   /*if (!strcmp ("Device", key))
   {
     GError *error = NULL;
-    gchar *path = g_strdup (g_value_get_string (value));
+    gchar *path = g_value_dup_string (value);
 
     priv->device = internal_device_new (priv->proxy, path, &error);
     if (!priv->device)
@@ -191,7 +191,7 @@ connection_update_property (const gchar *key, GValue *value, CmConnection *conne
   if (!strcmp ("Network", key))
   {
     GError *error = NULL;
-    gchar *path = g_strdup (g_value_get_string (value));
+    gchar *path = g_value_dup_string (value);
 
     priv->network = internal_network_new (priv->proxy, priv->device, path, &error);
     if (!priv->network)

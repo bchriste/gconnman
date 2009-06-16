@@ -202,7 +202,7 @@ network_update_property (const gchar *key, GValue *value, CmNetwork *network)
   if (!strcmp ("WiFi.Mode", key))
   {
     g_free (priv->mode);
-    priv->mode = g_strdup (g_value_get_string (value));
+    priv->mode = g_value_dup_string (value);
     priv->flags |= NETWORK_INFO_MODE;
     return;
   }
@@ -210,18 +210,18 @@ network_update_property (const gchar *key, GValue *value, CmNetwork *network)
   if (!strcmp ("WiFi.Security", key))
   {
     g_free (priv->security);
-    priv->security = g_strdup (g_value_get_string (value));
+    priv->security = g_value_dup_string (value);
     priv->flags |= NETWORK_INFO_SECURITY;
     return;
   }
 
   if (!strcmp ("WiFi.Passphrase", key))
   {
-    const gchar *passphrase = g_value_get_string (value);
+    gchar *passphrase = g_value_dup_string (value);
     g_free (priv->passphrase);
     if (strlen (passphrase))
     {
-      priv->passphrase = g_strdup (g_value_get_string (value));
+      priv->passphrase = passphrase;
       priv->flags |= NETWORK_INFO_PASSPHRASE;
     }
     else
@@ -235,7 +235,7 @@ network_update_property (const gchar *key, GValue *value, CmNetwork *network)
   if (!strcmp ("Name", key))
   {
     g_free (priv->name);
-    priv->name = g_strdup (g_value_get_string (value));
+    priv->name = g_value_dup_string (value);
     priv->flags |= NETWORK_INFO_NAME;
     return;
   }
@@ -243,7 +243,7 @@ network_update_property (const gchar *key, GValue *value, CmNetwork *network)
   if (!strcmp ("Address", key))
   {
     g_free (priv->address);
-    priv->address = g_strdup (g_value_get_string (value));
+    priv->address = g_value_dup_string (value);
     priv->flags |= NETWORK_INFO_ADDRESS;
   }
 
