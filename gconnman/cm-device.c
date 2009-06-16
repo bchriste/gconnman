@@ -108,22 +108,6 @@ device_proxy_call_destroy (CmDevice *device, DBusGProxyCall **proxy_call)
   *proxy_call = NULL;
 }
 
-
-static CmNetwork *
-device_find_network (CmDevice *device, const gchar *path)
-{
-  CmDevicePrivate *priv = device->priv;
-  GList *tmp = priv->networks;
-  while (tmp)
-  {
-    CmNetwork *network = tmp->data;
-    if (cm_network_is_same (network, path))
-      return network;
-    tmp = tmp->next;
-  }
-  return NULL;
-}
-
 static void
 device_update_property (const gchar *key, GValue *value, CmDevice *device)
 {
@@ -136,22 +120,28 @@ device_update_property (const gchar *key, GValue *value, CmDevice *device)
     gint i;
     const gchar *path;
 
+    while (priv->networks)
+    {
+      g_object_unref (priv->networks->data);
+      priv->networks = g_list_delete_link (priv->networks, priv->networks);
+    }
+
     for (i = 0; i < networks->len; i++)
     {
       path = g_ptr_array_index (networks, i);
-      CmNetwork *network = device_find_network (device, path);
+      CmNetwork *network;
+      GError *error = NULL;
+      g_print ("New network found: %s\n", path);
+      network = internal_network_new (priv->proxy, device, path, &error);
       if (!network)
       {
-	GError *error = NULL;
-	g_print ("New network found: %s\n", path);
-	network = internal_network_new (priv->proxy, device, path, &error);
-	if (!network)
-	{
-	  g_print ("network_new failed in %s: %s\n", __FUNCTION__,
-		   error->message);
-          g_error_free (error);
-	  continue;
-	}
+        g_print ("network_new failed in %s: %s\n", __FUNCTION__,
+                 error->message);
+        g_error_free (error);
+        continue;
+      }
+      else
+      {
 	priv->networks = g_list_append (priv->networks, network);
       }
     }
