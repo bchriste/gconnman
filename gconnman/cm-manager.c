@@ -513,7 +513,7 @@ cm_manager_get_active_service (CmManager *manager)
 
   if (priv->services)
   {
-    active = CM_SERVICE (g_list_first (priv->services));
+    active = CM_SERVICE (priv->services->data);
   }
 
   if (active)
