@@ -615,6 +615,7 @@ static void
 _free_g_value (GValue *value)
 {
   g_value_unset (value);
+  g_slice_free (GValue, value);
 }
 
 gboolean
@@ -624,7 +625,6 @@ cm_device_join_network (CmDevice *device, const gchar *ssid,
   CmDevicePrivate *priv = device->priv;
   GHashTable *net_props;
   GValue *mode_val, *network_val, *security_val, *secret_val;
-  gchar *proxy;
 
   if (priv->join_network_proxy_call)
   {
@@ -639,12 +639,12 @@ cm_device_join_network (CmDevice *device, const gchar *ssid,
                                      g_free,
                                      (GDestroyNotify) _free_g_value);
 
-  mode_val = g_new0 (GValue, 1);
+  mode_val = g_slice_new0 (GValue);
   g_value_init (mode_val, G_TYPE_STRING);
   g_value_set_string (mode_val, g_strdup ("managed"));
   g_hash_table_insert (net_props, g_strdup ("WiFi.Mode"), mode_val);
 
-  network_val = g_new0 (GValue, 1);
+  network_val = g_slice_new0 (GValue);
   g_value_init (network_val, G_TYPE_STRING);
   g_value_set_string (network_val, ssid);
   g_hash_table_insert (net_props, g_strdup ("WiFi.SSID"), network_val);
@@ -652,7 +652,7 @@ cm_device_join_network (CmDevice *device, const gchar *ssid,
   /* Security and passphrase are optional */
   if (security)
   {
-    security_val = g_new0 (GValue, 1);
+    security_val = g_slice_new0 (GValue);
     g_value_init (security_val, G_TYPE_STRING);
     g_value_set_string (security_val, security);
     g_hash_table_insert (net_props, g_strdup ("WiFi.Security"), security_val);
@@ -660,7 +660,7 @@ cm_device_join_network (CmDevice *device, const gchar *ssid,
 
   if (passphrase)
   {
-    secret_val = g_new0 (GValue, 1);
+    secret_val = g_slice_new0 (GValue);
     g_value_init (secret_val, G_TYPE_STRING);
     g_value_set_string (secret_val, passphrase);
     g_hash_table_insert (net_props, g_strdup ("WiFi.Passphrase"), secret_val);
