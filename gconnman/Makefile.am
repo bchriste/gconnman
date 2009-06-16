@@ -12,7 +12,7 @@ library_include_HEADERS = gconnman.h \
 	cm-manager.h cm-device.h cm-network.h cm-service.h cm-connection.h
 
 #Tell library where data directory is (/usr/share/gconnman)
-AM_CFLAGS = -DPKGDATADIR="\"$(pkgdatadir)\""
+AM_CFLAGS = -Wall -DPKGDATADIR="\"$(pkgdatadir)\""
 
 INCLUDES = @GCONNMAN_CFLAGS@
 
