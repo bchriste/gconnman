@@ -222,7 +222,7 @@ service_get_properties_call_notify (DBusGProxy *proxy,
   {
     g_print ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
              __FUNCTION__, cm_service_get_name (service), error->message);
-    g_clear_error (&error);
+    g_error_free (error);
     return;
   }
 
@@ -410,7 +410,7 @@ service_disconnect_call_notify (DBusGProxy *proxy,
   {
     g_print ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
              __FUNCTION__, cm_service_get_name (service), error->message);
-    g_clear_error (&error);
+    g_error_free (error);
   }
 
   g_print ("%s:%s\n", __FUNCTION__, cm_service_get_name (service));
@@ -440,7 +440,7 @@ cm_service_disconnect (CmService *service)
   if (!priv->disconnect_proxy_call)
   {
     g_print ("Disconnect failed: %s\n", error ? error->message : "Unknown");
-    g_clear_error (&error);
+    g_error_free (error);
     return FALSE;
   }
 
@@ -465,7 +465,7 @@ service_connect_call_notify (DBusGProxy *proxy,
   {
     g_print ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
              __FUNCTION__, cm_service_get_name (service), error->message);
-    g_clear_error (&error);
+    g_error_free (error);
   }
 
   g_print ("%s:%s\n", __FUNCTION__, cm_service_get_name (service));
@@ -494,7 +494,7 @@ cm_service_connect (CmService *service)
   if (!priv->connect_proxy_call)
   {
     g_print ("Connect failed: %s\n", error ? error->message : "Unknown");
-    g_clear_error (&error);
+    g_error_free (error);
     return FALSE;
   }
 
@@ -519,7 +519,7 @@ service_remove_call_notify (DBusGProxy *proxy,
   {
     g_print ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
              __FUNCTION__, cm_service_get_name (service), error->message);
-    g_clear_error (&error);
+    g_error_free (error);
   }
 
   g_print ("%s:%s\n", __FUNCTION__, cm_service_get_name (service));
@@ -543,7 +543,7 @@ cm_service_remove (CmService *service)
   if (!priv->remove_proxy_call)
   {
     g_print ("Remove failed: %s\n", error ? error->message : "Unknown");
-    g_clear_error (&error);
+    g_error_free (error);
     return FALSE;
   }
 
@@ -568,7 +568,7 @@ service_set_property_call_notify (DBusGProxy *proxy,
   {
     g_print ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
              __FUNCTION__, cm_service_get_name (service), error->message);
-    g_clear_error (&error);
+    g_error_free (error);
   }
   else
   {
@@ -610,7 +610,7 @@ cm_service_set_property (CmService *service, const gchar *property, GValue *valu
   if (!priv->set_property_proxy_call)
   {
     g_print ("SetProperty failed: %s\n", error ? error->message : "Unknown");
-    g_clear_error (&error);
+    g_error_free (error);
     return FALSE;
   }
 
@@ -634,7 +634,7 @@ service_move_before_call_notify (DBusGProxy *proxy, DBusGProxyCall *call,
   {
     g_print ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
              __FUNCTION__, cm_service_get_name (service), error->message);
-    g_clear_error (&error);
+    g_error_free (error);
   }
 
   g_print ("%s:%s\n", __FUNCTION__, cm_service_get_name (service));
@@ -663,7 +663,7 @@ cm_service_move_before (CmService *service, CmService *before)
   if (!priv->move_before_proxy_call)
   {
     g_print ("MoveBefore failed: %s\n", error ? error->message : "Unknown");
-    g_clear_error (&error);
+    g_error_free (error);
     return FALSE;
   }
 
@@ -687,7 +687,7 @@ service_move_after_call_notify (DBusGProxy *proxy, DBusGProxyCall *call,
   {
     g_print ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
              __FUNCTION__, cm_service_get_name (service), error->message);
-    g_clear_error (&error);
+    g_error_free (error);
   }
 
   g_print ("%s:%s\n", __FUNCTION__, cm_service_get_name (service));
@@ -716,7 +716,7 @@ cm_service_move_after (CmService *service, CmService *after)
   if (!priv->move_after_proxy_call)
   {
     g_print ("MoveAfter failed: %s\n", error ? error->message : "Unknown");
-    g_clear_error (&error);
+    g_error_free (error);
     return FALSE;
   }
 

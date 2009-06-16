@@ -335,7 +335,7 @@ network_get_properties_call_notify (DBusGProxy *proxy,
   {
     g_print ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
              __FUNCTION__, cm_network_get_name (network), error->message);
-    g_clear_error (&error);
+    g_error_free (error);
     return;
   }
 
@@ -443,7 +443,7 @@ network_disconnect_call_notify (DBusGProxy *proxy,
   {
     g_print ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
              __FUNCTION__, cm_network_get_name (network), error->message);
-    g_clear_error (&error);
+    g_error_free (error);
   }
 
   g_print ("%s:%s\n", __FUNCTION__, cm_network_get_name (network));
@@ -473,7 +473,7 @@ cm_network_disconnect (CmNetwork *network)
   if (!priv->disconnect_proxy_call)
   {
     g_print ("Disconnect failed: %s\n", error ? error->message : "Unknown");
-    g_clear_error (&error);
+    g_error_free (error);
     return FALSE;
   }
 
@@ -498,7 +498,7 @@ network_connect_call_notify (DBusGProxy *proxy,
   {
     g_print ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
              __FUNCTION__, cm_network_get_name (network), error->message);
-    g_clear_error (&error);
+    g_error_free (error);
   }
 
   g_print ("%s:%s\n", __FUNCTION__, cm_network_get_name (network));
@@ -530,7 +530,7 @@ cm_network_connect (CmNetwork *network)
   if (!priv->connect_proxy_call)
   {
     g_print ("Connect failed: %s\n", error ? error->message : "Unknown");
-    g_clear_error (&error);
+    g_error_free (error);
     return FALSE;
   }
 
@@ -601,7 +601,7 @@ network_set_property_call_notify (DBusGProxy *proxy,
   {
     g_print ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
              __FUNCTION__, cm_network_get_name (network), error->message);
-    g_clear_error (&error);
+    g_error_free (error);
   }
   else
   {
@@ -643,7 +643,7 @@ cm_network_set_property (CmNetwork *network, const gchar *property, GValue *valu
   if (!priv->set_property_proxy_call)
   {
     g_print ("SetProperty failed: %s\n", error ? error->message : "Unknown");
-    g_clear_error (&error);
+    g_error_free (error);
     return FALSE;
   }
 

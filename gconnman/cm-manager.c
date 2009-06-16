@@ -117,7 +117,7 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
       {
         g_print ("device_new failed in %s: %s\n", __FUNCTION__,
                  error->message);
-        g_clear_error (&error);
+        g_error_free (error);
         continue;
       }
       devices_list = g_list_append (devices_list, device);
@@ -152,7 +152,7 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
       {
         g_print ("connection_new failed in %s: %s\n", __FUNCTION__,
                  error->message);
-        g_clear_error (&error);
+        g_error_free (error);
         continue;
       }
       connections_list = g_list_append (connections_list, connection);
@@ -187,7 +187,7 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
       {
         g_print ("service_new failed in %s: %s\n", __FUNCTION__,
                  error->message);
-        g_clear_error (&error);
+        g_error_free (error);
         continue;
       }
       services_list = g_list_append (services_list, service);
@@ -254,7 +254,7 @@ manager_get_properties_call_notify (DBusGProxy *proxy,
   {
     g_print ("Error calling dbus_g_proxy_end_call in %s: %s\n",
              __FUNCTION__, error->message);
-    g_clear_error (&error);
+    g_error_free (error);
     return;
   }
 
@@ -410,7 +410,7 @@ manager_set_property_call_notify (DBusGProxy *proxy,
   {
     g_print ("Error calling dbus_g_proxy_end_call in %s on Manager: %s\n",
              __FUNCTION__, error->message);
-    g_clear_error (&error);
+    g_error_free (error);
   }
   else
   {
@@ -452,7 +452,7 @@ manager_set_property (CmManager *manager, const gchar *property, GValue *value)
   if (!priv->set_property_proxy_call)
   {
     g_print ("SetProperty failed %s\n", error ? error->message : "Unknown");
-    g_clear_error (&error);
+    g_error_free (error);
     return FALSE;
   }
 

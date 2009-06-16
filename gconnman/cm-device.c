@@ -149,7 +149,7 @@ device_update_property (const gchar *key, GValue *value, CmDevice *device)
 	{
 	  g_print ("network_new failed in %s: %s\n", __FUNCTION__,
 		   error->message);
-          g_clear_error (&error);
+          g_error_free (error);
 	  continue;
 	}
 	priv->networks = g_list_append (priv->networks, network);
@@ -413,7 +413,7 @@ device_propose_scan_call_notify (DBusGProxy *proxy,
   {
     g_print ("Error calling dbus_g_proxy_end_call in %s: %s\n",
              __FUNCTION__, error->message);
-    g_clear_error (&error);
+    g_error_free (error);
   }
 
   ASYNC_DEBUG ("Device::ProposeScan invocation complete.\n");
@@ -477,7 +477,7 @@ device_set_property_call_notify (DBusGProxy *proxy,
   {
     g_print ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
              __FUNCTION__, cm_device_get_name (device), error->message);
-    g_clear_error (&error);
+    g_error_free (error);
   }
   else
   {
@@ -519,7 +519,7 @@ device_set_property (CmDevice *device, const gchar *property, GValue *value)
   if (!priv->set_property_proxy_call)
   {
     g_print ("SetProperty failed: %s\n", error ? error->message : "Unknown");
-    g_clear_error (&error);
+    g_error_free (error);
     return FALSE;
   }
 
@@ -605,7 +605,7 @@ device_join_network_call_notify (DBusGProxy *proxy, DBusGProxyCall *call,
   {
     g_print ("Error calling dbus_g_proxy_end_call in %s: %s\n",
              __FUNCTION__, error->message);
-    g_clear_error (&error);
+    g_error_free (error);
   }
 
   ASYNC_DEBUG ("Device::JoinNetwork invocation complete.\n");

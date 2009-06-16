@@ -181,7 +181,7 @@ connection_update_property (const gchar *key, GValue *value, CmConnection *conne
     if (!priv->device)
     {
       g_print ("device_new failed in %s: %s\n", __FUNCTION__, error->message);
-      g_clear_error (&error);
+      g_error_free (error);
     }
 
     g_signal_emit (connection, connection_signals[SIGNAL_DEVICE_CHANGED], 0);
@@ -197,7 +197,7 @@ connection_update_property (const gchar *key, GValue *value, CmConnection *conne
     if (!priv->network)
     {
       g_print ("network_new failed in %s: %s\n", __FUNCTION__, error->message);
-      g_clear_error (&error);
+      g_error_free (error);
     }
 
     g_signal_emit (connection, connection_signals[SIGNAL_NETWORK_CHANGED], 0);
@@ -248,7 +248,7 @@ connection_get_properties_call_notify (DBusGProxy *proxy,
   {
     g_print ("Error calling dbus_g_proxy_end_call in %s: %s\n",
              __FUNCTION__, error->message);
-    g_clear_error (&error);
+    g_error_free (error);
     return;
   }
 
