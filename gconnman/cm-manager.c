@@ -269,8 +269,6 @@ gboolean
 cm_manager_refresh (CmManager *manager)
 {
   CmManagerPrivate *priv = manager->priv;
-  GError *error = NULL;
-  GHashTable *properties = NULL;
 
   /* Remove all the prior devices */
   while (priv->devices)
@@ -292,15 +290,6 @@ cm_manager_refresh (CmManager *manager)
     g_object_unref (priv->services->data);
     priv->services = g_list_delete_link (priv->services, priv->services);
   }
-
-  dbus_g_proxy_add_signal (
-    priv->proxy, "PropertyChanged",
-    G_TYPE_STRING, G_TYPE_VALUE, G_TYPE_INVALID);
-
-  dbus_g_proxy_connect_signal (
-    priv->proxy, "PropertyChanged",
-    G_CALLBACK (manager_property_change_handler_proxy),
-    manager, NULL);
 
   priv->get_properties_proxy_call = dbus_g_proxy_begin_call (
     priv->proxy, "GetProperties",
@@ -380,6 +369,15 @@ manager_set_dbus_connection (CmManager *manager, GError **error)
     priv->connection = NULL;
     return FALSE;
   }
+
+  dbus_g_proxy_add_signal (
+    priv->proxy, "PropertyChanged",
+    G_TYPE_STRING, G_TYPE_VALUE, G_TYPE_INVALID);
+
+  dbus_g_proxy_connect_signal (
+    priv->proxy, "PropertyChanged",
+    G_CALLBACK (manager_property_change_handler_proxy),
+    manager, NULL);
 
   return TRUE;
 }
