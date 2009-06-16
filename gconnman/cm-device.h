@@ -79,7 +79,7 @@ typedef enum
 
 CmDeviceType cm_device_get_type (const CmDevice *device);
 const gchar *cm_device_type_to_string (CmDeviceType type);
-GList *cm_device_get_networks (CmDevice *device);
+const GList *cm_device_get_networks (CmDevice *device);
 void cm_device_free (CmDevice *device);
 const gchar *cm_device_get_path (CmDevice *device);
 gboolean cm_device_is_same (const CmDevice *device, const gchar *path);

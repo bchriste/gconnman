@@ -462,25 +462,25 @@ manager_set_property (CmManager *manager, const gchar *property, GValue *value)
   return TRUE;
 }
 
-GList *
+const GList *
 cm_manager_get_devices (CmManager *manager)
 {
   CmManagerPrivate *priv = manager->priv;
-  return g_list_copy (priv->devices);
+  return priv->devices;
 }
 
-GList *
+const GList *
 cm_manager_get_connections (CmManager *manager)
 {
   CmManagerPrivate *priv = manager->priv;
-  return g_list_copy (priv->connections);
+  return priv->connections;
 }
 
-GList *
+const GList *
 cm_manager_get_services (CmManager *manager)
 {
   CmManagerPrivate *priv = manager->priv;
-  return g_list_copy (priv->services);
+  return priv->services;
 }
 
 gboolean

@@ -347,11 +347,11 @@ internal_device_new (DBusGProxy *proxy, const gchar *path, GError **error)
   return device;
 }
 
-GList *
+const GList *
 cm_device_get_networks (CmDevice *device)
 {
   CmDevicePrivate *priv= device->priv;
-  return g_list_copy (priv->networks);
+  return priv->networks;
 }
 
 const gchar *
