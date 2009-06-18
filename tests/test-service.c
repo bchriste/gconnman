@@ -46,8 +46,8 @@ void
 _services_changed_cb (CmManager *manager,
                       gpointer user_data)
 {
-  GList *services;
-  int i;
+  const GList *services;
+  const GList *it;
 
   g_debug ("Services changed on manager\n");
   services = cm_manager_get_services (manager);
@@ -57,10 +57,10 @@ _services_changed_cb (CmManager *manager,
   }
   else
   {
-    for (i = 0; i < g_list_length (services); i++)
+    for (it = services; it != NULL; it = it->next)
     {
-      CmService *service = CM_SERVICE (g_list_nth (services,
-                                                   i)->data);
+      CmService *service = it->data;
+
       g_signal_connect (G_OBJECT (service),
                         "service-updated",
                         G_CALLBACK (_service_updated_cb),
