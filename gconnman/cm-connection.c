@@ -165,7 +165,7 @@ connection_update_property (const gchar *key, GValue *value, CmConnection *conne
   /*else if (!strcmp ("Device", key))
   {
     GError *error = NULL;
-    gchar *path = g_value_dup_string (value);
+    gchar *path = g_value_get_boxed (value);
 
     priv->device = internal_device_new (priv->proxy, path, &error);
     if (!priv->device)
@@ -175,12 +175,11 @@ connection_update_property (const gchar *key, GValue *value, CmConnection *conne
     }
 
     g_signal_emit (connection, connection_signals[SIGNAL_DEVICE_CHANGED], 0);
-    g_free (path);
-    }*/
+  }
   else if (!strcmp ("Network", key))
   {
     GError *error = NULL;
-    gchar *path = g_value_dup_string (value);
+    gchar *path = g_value_get_boxed (value);
 
     priv->network = internal_network_new (priv->proxy, priv->device, path, &error);
     if (!priv->network)
@@ -190,8 +189,7 @@ connection_update_property (const gchar *key, GValue *value, CmConnection *conne
     }
 
     g_signal_emit (connection, connection_signals[SIGNAL_NETWORK_CHANGED], 0);
-    g_free (path);
-  }
+    }*/
   else
   {
     tmp = g_strdup_value_contents (value);
@@ -512,6 +510,14 @@ connection_class_init (CmConnectionClass *klass)
     G_TYPE_NONE, 0);
   /*connection_signals[SIGNAL_DEVICE_CHANGED] = g_signal_new (
     "device-changed",
+    G_TYPE_FROM_CLASS (gobject_class),
+    G_SIGNAL_RUN_LAST,
+    0,
+    NULL, NULL,
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
+  connection_signals[SIGNAL_NETWORK_CHANGED] = g_signal_new (
+    "network-changed",
     G_TYPE_FROM_CLASS (gobject_class),
     G_SIGNAL_RUN_LAST,
     0,
