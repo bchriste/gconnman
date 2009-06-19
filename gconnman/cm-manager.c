@@ -93,6 +93,66 @@ manager_proxy_call_destroy (CmManager *manager, DBusGProxyCall **proxy_call)
   *proxy_call = NULL;
 }
 
+CmDevice *
+cm_manager_find_device (CmManager *manager, const gchar *opath)
+{
+  CmManagerPrivate *priv = manager->priv;
+  CmDevice *device = NULL;
+  GList *iter;
+  const gchar *dpath;
+
+  for (iter = priv->devices; iter != NULL; iter = iter->next)
+  {
+    device = iter->data;
+    dpath = cm_device_get_path (device);
+
+    if (g_strcmp0 (opath, dpath) == 0)
+      return device;
+  }
+
+  return NULL;
+}
+
+CmService *
+cm_manager_find_service (CmManager *manager, const gchar *opath)
+{
+  CmManagerPrivate *priv = manager->priv;
+  CmService *service = NULL;
+  GList *iter;
+  const gchar *spath;
+
+  for (iter = priv->services; iter != NULL; iter = iter->next)
+  {
+    service = iter->data;
+    spath = cm_service_get_path (service);
+
+    if (g_strcmp0 (opath, spath) == 0)
+      return service;
+  }
+
+  return NULL;
+}
+
+CmConnection *
+cm_manager_find_connection (CmManager *manager, const gchar *opath)
+{
+  CmManagerPrivate *priv = manager->priv;
+  CmConnection *connection = NULL;
+  GList *iter;
+  const gchar *cpath;
+
+  for (iter = priv->connections; iter != NULL; iter = iter->next)
+  {
+    connection = iter->data;
+    cpath = cm_connection_get_path (connection);
+
+    if (g_strcmp0 (opath, cpath) == 0)
+      return connection;
+  }
+
+  return NULL;
+}
+
 static void
 manager_update_property (const gchar *key, GValue *value, CmManager *manager)
 {
