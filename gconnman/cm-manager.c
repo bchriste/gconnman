@@ -164,30 +164,54 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
     GPtrArray *devices = g_value_get_boxed (value);
     gint i;
     const gchar *path = NULL;
+    GList *iter;
 
-    while (priv->devices)
+    /* First remove stale devices */
+    for (iter = priv->devices; iter != NULL; iter = iter->next)
     {
-      g_object_unref (priv->devices->data);
-      priv->devices = g_list_delete_link (priv->devices, priv->devices);
+      CmDevice *dev = iter->data;
+      gboolean found = FALSE;
+
+      for (i = 0; i < devices->len && !found; i++)
+      {
+        path = g_ptr_array_index (devices, i);
+
+        if (g_strcmp0 (path, cm_device_get_path (dev)) == 0)
+        {
+          found = TRUE;
+        }
+      }
+
+      /* device not in retrieved list, delete from our list */
+      if (!found)
+      {
+        priv->devices = g_list_delete_link (priv->devices, iter);
+      }
     }
 
+    /* iterate retrieved list, add any new items to our list */
     for (i = 0; i < devices->len; i++)
     {
       path = g_ptr_array_index (devices, i);
       CmDevice *device;
       GError *error = NULL;
-      g_print ("New device found: %s\n", path);
-      device = internal_device_new (priv->proxy, path, &error);
+
+      device = cm_manager_find_device (manager, path);
       if (!device)
       {
-        g_print ("device_new failed in %s: %s\n", __FUNCTION__,
-                 error->message);
-        g_error_free (error);
-        continue;
-      }
-      else
-      {
-        priv->devices = g_list_append (priv->devices, device);
+        g_print ("New device found: %s\n", path);
+        device = internal_device_new (priv->proxy, path, &error);
+        if (!device)
+        {
+          g_print ("device_new failed in %s: %s\n", __FUNCTION__,
+                   error->message);
+          g_error_free (error);
+          continue;
+        }
+        else
+        {
+          priv->devices = g_list_append (priv->devices, device);
+        }
       }
     }
 
@@ -198,30 +222,54 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
     GPtrArray *connections = g_value_get_boxed (value);
     gint i;
     const gchar *path = NULL;
+    GList *iter;
 
-    while (priv->connections)
+    /* First remove stale connections */
+    for (iter = priv->connections; iter != NULL; iter = iter->next)
     {
-      g_object_unref (priv->connections->data);
-      priv->connections = g_list_delete_link (priv->connections, priv->connections);
+      CmConnection *con = iter->data;
+      gboolean found = FALSE;
+
+      for (i = 0; i < connections->len && !found; i++)
+      {
+        path = g_ptr_array_index (connections, i);
+
+        if (g_strcmp0 (path, cm_connection_get_path (con)) == 0)
+        {
+          found = TRUE;
+        }
+      }
+
+      /* connection not in retrieved list, delete from our list */
+      if (!found)
+      {
+        priv->connections = g_list_delete_link (priv->connections, iter);
+      }
     }
 
+    /* iterate retrieved list, add any new items to our list */
     for (i = 0; i < connections->len; i++)
     {
       path = g_ptr_array_index (connections, i);
       CmConnection *connection;
       GError *error = NULL;
-      g_print ("New connection found: %s\n", path);
-      connection = internal_connection_new (priv->proxy, path, &error);
+
+      connection = cm_manager_find_connection (manager, path);
       if (!connection)
       {
-        g_print ("connection_new failed in %s: %s\n", __FUNCTION__,
-                 error->message);
-        g_error_free (error);
-        continue;
-      }
-      else
-      {
-        priv->connections = g_list_append (priv->connections, connection);
+        g_print ("New connection found: %s\n", path);
+        connection = internal_connection_new (priv->proxy, path, &error);
+        if (!connection)
+        {
+          g_print ("connection_new failed in %s: %s\n", __FUNCTION__,
+                   error->message);
+          g_error_free (error);
+          continue;
+        }
+        else
+        {
+          priv->connections = g_list_append (priv->connections, connection);
+        }
       }
     }
 
@@ -232,32 +280,64 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
     GPtrArray *services = g_value_get_boxed (value);
     gint i;
     const gchar *path = NULL;
+    GList *iter;
 
-    while (priv->services)
+    /* First remove stale services */
+    for (iter = priv->services; iter != NULL; iter = iter->next)
     {
-      g_object_unref (priv->services->data);
-      priv->services = g_list_delete_link (priv->services, priv->services);
+      CmService *serv = iter->data;
+      gboolean found = FALSE;
+
+      for (i = 0; i < services->len && !found; i++)
+      {
+        path = g_ptr_array_index (services, i);
+
+        if (g_strcmp0 (path, cm_service_get_path (serv)) == 0)
+        {
+          found = TRUE;
+        }
+      }
+
+      /* service not in retrieved list, delete from our list */
+      if (!found)
+      {
+        priv->services = g_list_delete_link (priv->services, iter);
+      }
     }
 
+    /* iterate retrieved list, add any new items to our list */
     for (i = 0; i < services->len; i++)
     {
       path = g_ptr_array_index (services, i);
       CmService *service;
       GError *error = NULL;
-      g_print ("New service found: %s\n", path);
-      service = internal_service_new (priv->proxy, path, &error);
+
+      service = cm_manager_find_service (manager, path);
       if (!service)
       {
-        g_print ("service_new failed in %s: %s\n", __FUNCTION__,
-                 error->message);
-        g_error_free (error);
-        continue;
+        g_print ("New service found: %s\n", path);
+        service = internal_service_new (priv->proxy, path, i, &error);
+        if (!service)
+        {
+          g_print ("service_new failed in %s: %s\n", __FUNCTION__,
+                   error->message);
+          g_error_free (error);
+          continue;
+        }
+        else
+        {
+          priv->services = g_list_append (priv->services, service);
+        }
       }
       else
       {
-        priv->services = g_list_append (priv->services, service);
+        /* services are sorted so update the order */
+        cm_service_set_order (service, i);
       }
     }
+
+    priv->services = g_list_sort (priv->services,
+                                  (GCompareFunc) cm_service_compare);
 
     g_signal_emit (manager, manager_signals[SIGNAL_SERVICES_CHANGED], 0);
   }
