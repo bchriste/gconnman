@@ -46,6 +46,7 @@ struct _CmServicePrivate
   gchar *security;
   gchar *passphrase;
   guint strength;
+  gint order;
   gboolean favorite;
 
   gboolean connected;
@@ -250,7 +251,7 @@ service_get_properties_call_notify (DBusGProxy *proxy,
 }
 
 CmService *
-internal_service_new (DBusGProxy *proxy, const gchar *path,
+internal_service_new (DBusGProxy *proxy, const gchar *path, int order,
                       GError **error)
 {
   CmService *service;
@@ -306,6 +307,8 @@ internal_service_new (DBusGProxy *proxy, const gchar *path,
     g_object_unref (service);
     return NULL;
   }
+
+  priv->order = order;
 
   return service;
 }
@@ -654,6 +657,20 @@ cm_service_is_same (const CmService *first, const CmService *second)
   return ret;
 }
 
+gint
+cm_service_compare (CmService *first, CmService *second)
+{
+  CmServicePrivate *fpriv = first->priv;
+  CmServicePrivate *spriv = second->priv;
+
+  if (fpriv->order < spriv->order)
+    return -1;
+  else if (fpriv->order == spriv->order)
+    return 0;
+  else
+    return 1;
+}
+
 /* Property getters/setters */
 const gchar *
 cm_service_get_state (CmService *service)
@@ -723,6 +740,20 @@ cm_service_get_strength (CmService *service)
 {
   CmServicePrivate *priv = service->priv;
   return priv->strength;
+}
+
+gint
+cm_service_get_order (CmService *service)
+{
+  CmServicePrivate *priv = service->priv;
+  return priv->order;
+}
+
+void
+cm_service_set_order (CmService *service, gint order)
+{
+  CmServicePrivate *priv = service->priv;
+  priv->order = order;
 }
 
 gboolean

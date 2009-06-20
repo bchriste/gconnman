@@ -90,6 +90,7 @@ gboolean cm_service_move_before (CmService *service, CmService *before);
 gboolean cm_service_move_after (CmService *service, CmService *after);
 gboolean cm_service_is_same (const CmService *first, const CmService *second);
 gboolean cm_service_remove (CmService *service);
+gint cm_service_compare (CmService *first, CmService *second);
 
 /* const getters */
 const gchar *cm_service_get_path (CmService *service);
@@ -102,7 +103,9 @@ const gchar *cm_service_get_passphrase (CmService *service);
 guint cm_service_get_strength (CmService *service);
 gboolean cm_service_get_favorite (CmService *service);
 gboolean cm_service_get_connected (CmService *service);
+gint cm_service_get_order (CmService *service);
 
 gboolean cm_service_set_passphrase (CmService *service, const char* passphrase);
+void cm_service_set_order (CmService *service, gint order);
 
 #endif
