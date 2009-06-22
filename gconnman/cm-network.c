@@ -38,10 +38,8 @@
  *
  * The Network objects are typically contained within a Device object.
  */
-#include <sys/time.h>
 #include <ctype.h>
 #include <string.h>
-#include <time.h>
 #include <stdlib.h>
 #include <glib.h>
 
@@ -73,7 +71,7 @@ struct _CmNetworkPrivate
   gchar *address;
   CmNetworkInfoMask flags;
 
-  gulong last_update;
+  time_t last_update;
 
   DBusGProxyCall *get_properties_proxy_call;
   DBusGProxyCall *connect_proxy_call;
@@ -136,9 +134,7 @@ static void
 network_update_timestamp (CmNetwork *network)
 {
   CmNetworkPrivate *priv = network->priv;
-  struct timeval now;
-  gettimeofday (&now, NULL);
-  priv->last_update = (now.tv_sec * 1000) + (now.tv_usec / 1000);
+  priv->last_update = time (NULL);
 }
 
 static void
