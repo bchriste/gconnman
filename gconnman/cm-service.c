@@ -436,6 +436,10 @@ service_remove_call_notify (DBusGProxy *proxy,
 
   priv->remove_proxy_call = NULL;
 
+  /* Clear the local passphrase */
+  g_free (priv->passphrase);
+  priv->passphrase = g_strdup ("");
+
   if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
   {
     g_print ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
@@ -831,6 +835,7 @@ service_finalize (GObject *object)
   g_free (priv->mode);
   g_free (priv->security);
   g_free (priv->path);
+  g_free (priv->passphrase);
 
   G_OBJECT_CLASS (service_parent_class)->finalize (object);
 }
@@ -845,6 +850,7 @@ service_init (CmService *self)
   self->priv->type = NULL;
   self->priv->mode = NULL;
   self->priv->security = NULL;
+  self->priv->passphrase = NULL;
   self->priv->favorite = FALSE;
   self->priv->connected = FALSE;
 }
