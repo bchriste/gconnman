@@ -44,7 +44,6 @@
 #include <glib.h>
 
 #include "gconnman-internal.h"
-#include "debug.h"
 
 #define CM_NETWORK_ERROR network_error_quark ()
 
@@ -156,7 +155,6 @@ network_update_property (const gchar *key, GValue *value, CmNetwork *network)
     if (!G_VALUE_HOLDS_BOXED (value))
     {
       tmp = g_strdup_value_contents (value);
-      g_print ("No SSID for %s\n", tmp);
       g_free (tmp);
     }
     else
@@ -229,40 +227,10 @@ network_update_property (const gchar *key, GValue *value, CmNetwork *network)
   else
   {
     tmp = g_strdup_value_contents (value);
-    g_print ("Unhandled property on %s: %s = %s\n",
+    g_debug ("Unhandled property on %s: %s = %s\n",
              cm_network_get_name (network), key, tmp);
     g_free (tmp);
   }
-}
-
-void
-cm_network_print (const CmNetwork *network)
-{
-  CmNetworkPrivate *priv = network->priv;
-  static gint max = 20;
-  gchar *tmp = g_strdup (cm_network_get_name (network));
-  gint i;
-  for (i = 0; i < max; i++)
-  {
-    if (tmp[i] == '\0')
-      break;
-  }
-  if (i == max && tmp[i])
-  {
-    tmp[max-3] = tmp[max-2] = tmp[max-1] = '.';
-    tmp[max] = '\0';
-  }
-
-  g_print ("%-*s:%9s %5s %7s %8s %3d %3d\n",
-	   max, tmp,
-	   priv->connected ? "CONNECTED" : "",
-	   priv->security  ? priv->security : "none",
-	   priv->passphrase  ? "<set>" : "<unset>",
-	   priv->mode      ? priv->mode : "managed",
-	   priv->strength,
-	   priv->priority);
-
-  g_free (tmp);
 }
 
 static void
@@ -283,10 +251,7 @@ network_property_change_handler_proxy (DBusGProxy *proxy,
 				       gpointer data)
 {
   CmNetwork *network = data;
-  gchar *tmp = g_strdup_value_contents (value);
-  g_print ("PropertyChange on %s: %s = %s\n",
-           cm_network_get_name (network), key, tmp);
-  g_free (tmp);
+
   network_update_property (key, value, network);
 
   network_emit_updated (network);
@@ -303,32 +268,11 @@ network_get_properties_call_notify (DBusGProxy *proxy,
   GHashTable *properties = NULL;
   gint count;
 
-  if (priv->get_properties_proxy_call != call)
-  {
-    g_print ("%s Call mismatch!\n", __FUNCTION__);
-  }
-  priv->get_properties_proxy_call = NULL;
-
-  if (!dbus_g_proxy_end_call (
-	proxy, call, &error,
-	/* OUT values */
-	dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE),
-	&properties, G_TYPE_INVALID))
-  {
-    g_print ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
-             __FUNCTION__, cm_network_get_name (network), error->message);
-    g_error_free (error);
-    return;
-  }
-
   count = g_hash_table_size (properties);
 
   g_hash_table_foreach (properties, (GHFunc)network_update_property, network);
   g_hash_table_unref (properties);
   network_emit_updated (network);
-
-  ASYNC_DEBUG ("Network::GetProperties invocation complete (%d properties).\n",
-               count);
 }
 
 CmNetwork *
@@ -416,19 +360,14 @@ network_disconnect_call_notify (DBusGProxy *proxy,
   CmNetworkPrivate *priv = network->priv;
   GError *error = NULL;
 
-  if (priv->disconnect_proxy_call != call)
-    g_print ("%s Call mismatch!\n", __FUNCTION__);
-
   priv->disconnect_proxy_call = NULL;
 
   if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
   {
-    g_print ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
+    g_debug ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
              __FUNCTION__, cm_network_get_name (network), error->message);
     g_error_free (error);
   }
-
-  g_print ("%s:%s\n", __FUNCTION__, cm_network_get_name (network));
 }
 
 gboolean
@@ -436,8 +375,6 @@ cm_network_disconnect (CmNetwork *network)
 {
   CmNetworkPrivate *priv = network->priv;
   GError *error = NULL;
-
-  g_print ("%s:%s\n", __FUNCTION__, cm_network_get_name (network));
 
   if (!priv->connected && !priv->connect_proxy_call)
     return TRUE;
@@ -454,7 +391,7 @@ cm_network_disconnect (CmNetwork *network)
 
   if (!priv->disconnect_proxy_call)
   {
-    g_print ("Disconnect failed: %s\n", error ? error->message : "Unknown");
+    g_debug ("Disconnect failed: %s\n", error ? error->message : "Unknown");
     g_error_free (error);
     return FALSE;
   }
@@ -471,19 +408,14 @@ network_connect_call_notify (DBusGProxy *proxy,
   CmNetworkPrivate *priv = network->priv;
   GError *error = NULL;
 
-  if (priv->connect_proxy_call != call)
-    g_print ("%s Call mismatch!\n", __FUNCTION__);
-
   priv->connect_proxy_call = NULL;
 
   if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
   {
-    g_print ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
+    g_debug ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
              __FUNCTION__, cm_network_get_name (network), error->message);
     g_error_free (error);
   }
-
-  g_print ("%s:%s\n", __FUNCTION__, cm_network_get_name (network));
 }
 
 gboolean
@@ -491,8 +423,6 @@ cm_network_connect (CmNetwork *network)
 {
   CmNetworkPrivate *priv = network->priv;
   GError *error = NULL;
-
-  g_print ("%s:%s\n", __FUNCTION__, cm_network_get_name (network));
 
   if (priv->connected && !priv->disconnect_proxy_call)
     return TRUE;
@@ -574,14 +504,11 @@ network_set_property_call_notify (DBusGProxy *proxy,
   CmNetworkPrivate *priv = network->priv;
   GError *error = NULL;
 
-  if (priv->set_property_proxy_call != call)
-    g_print ("%s Call mismatch!\n", __FUNCTION__);
-
   priv->set_property_proxy_call = NULL;
 
   if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
   {
-    g_print ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
+    g_debug ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
              __FUNCTION__, cm_network_get_name (network), error->message);
     g_error_free (error);
   }
@@ -596,8 +523,6 @@ network_set_property_call_notify (DBusGProxy *proxy,
   g_free (priv->pending_property_name);
   g_value_unset (&priv->pending_property_value);
   priv->pending_property_name = NULL;
-
-  g_print ("%s:%s\n", __FUNCTION__, cm_network_get_name (network));
 }
 
 gboolean
@@ -605,8 +530,6 @@ cm_network_set_property (CmNetwork *network, const gchar *property, GValue *valu
 {
   CmNetworkPrivate *priv = network->priv;
   GError *error = NULL;
-
-  g_print ("%s:%s\n", __FUNCTION__, cm_network_get_name (network));
 
   if (priv->set_property_proxy_call)
     return FALSE;
@@ -624,7 +547,7 @@ cm_network_set_property (CmNetwork *network, const gchar *property, GValue *valu
 
   if (!priv->set_property_proxy_call)
   {
-    g_print ("SetProperty failed: %s\n", error ? error->message : "Unknown");
+    g_debug ("SetProperty failed: %s\n", error ? error->message : "Unknown");
     g_error_free (error);
     return FALSE;
   }
@@ -637,8 +560,6 @@ cm_network_set_passphrase (CmNetwork *network, const gchar *passphrase)
 {
   GValue value = { 0 };
   gboolean ret;
-  g_print ("Setting passphrase for %s to: %s\n", cm_network_get_name (network),
-	   passphrase);
   g_value_init (&value, G_TYPE_STRING);
   g_value_set_static_string (&value, passphrase);
   ret = cm_network_set_property (network, "WiFi.Passphrase", &value);

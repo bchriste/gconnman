@@ -83,7 +83,6 @@ const GList *cm_device_get_networks (CmDevice *device);
 void cm_device_free (CmDevice *device);
 const gchar *cm_device_get_path (CmDevice *device);
 gboolean cm_device_is_same (const CmDevice *device, const gchar *path);
-void cm_device_print (const CmDevice *device);
 const gchar *cm_device_get_name (const CmDevice *device);
 gboolean cm_device_is_scanning (const CmDevice *device);
 gboolean cm_device_set_powered (CmDevice *device, gboolean powered);

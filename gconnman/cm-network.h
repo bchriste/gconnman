@@ -81,9 +81,6 @@ typedef enum
   NETWORK_INFO_ADDRESS    = 1 << 8,
 } CmNetworkInfoMask;
 
-/* debug */
-void cm_network_print (const CmNetwork *network);
-
 /* methods */
 gboolean cm_network_connect (CmNetwork *network);
 gboolean cm_network_disconnect (CmNetwork *network);

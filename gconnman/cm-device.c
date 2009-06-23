@@ -37,7 +37,6 @@
  */
 #include <string.h>
 
-#include "debug.h"
 #include "gconnman-internal.h"
 
 G_DEFINE_TYPE (CmDevice, device, G_TYPE_OBJECT);
@@ -131,11 +130,10 @@ device_update_property (const gchar *key, GValue *value, CmDevice *device)
       path = g_ptr_array_index (networks, i);
       CmNetwork *network;
       GError *error = NULL;
-      g_print ("New network found: %s\n", path);
       network = internal_network_new (priv->proxy, device, path, &error);
       if (!network)
       {
-        g_print ("network_new failed in %s: %s\n", __FUNCTION__,
+        g_debug ("network_new failed in %s: %s\n", __FUNCTION__,
                  error->message);
         g_error_free (error);
         continue;
@@ -176,7 +174,7 @@ device_update_property (const gchar *key, GValue *value, CmDevice *device)
       priv->type = DEVICE_ETHERNET;
     else
     {
-      g_print ("Unknown device type on %s: %s\n",
+      g_debug ("Unknown device type on %s: %s\n",
                cm_device_get_name (device), type);
       priv->type = DEVICE_UNKNOWN;
     }
@@ -211,7 +209,7 @@ device_update_property (const gchar *key, GValue *value, CmDevice *device)
   else
   {
     tmp = g_strdup_value_contents (value);
-    g_print ("Unhandled property on %s: %s = %s\n",
+    g_debug ("Unhandled property on %s: %s = %s\n",
              cm_device_get_name (device), key, tmp);
     g_free (tmp);
   }
@@ -225,10 +223,6 @@ device_property_change_handler_proxy (DBusGProxy *proxy,
 				      gpointer data)
 {
   CmDevice *device = data;
-  gchar *tmp = g_strdup_value_contents (value);
-  g_print ("PropertyChange on %s: %s = %s\n",
-           cm_device_get_name (device), key, tmp);
-  g_free (tmp);
 
   device_update_property (key, value, device);
 
@@ -245,16 +239,13 @@ device_get_properties_call_notify (DBusGProxy *proxy,
   GError *error = NULL;
   GHashTable *properties = NULL;
 
-  if (priv->get_properties_proxy_call != call)
-    g_print ("%s Call mismatch!\n", __FUNCTION__);
-
   if (!dbus_g_proxy_end_call (
 	proxy, call, &error,
 	/* OUT values */
 	dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE),
 	&properties, G_TYPE_INVALID))
   {
-    g_print ("Error calling dbus_g_proxy_end_call in %s: %s\n",
+    g_debug ("Error calling dbus_g_proxy_end_call in %s: %s\n",
              __FUNCTION__, error->message);
     g_clear_error (&error);
     return;
@@ -342,15 +333,6 @@ cm_device_get_path (CmDevice *device)
   return priv->path;
 }
 
-void
-cm_device_print (const CmDevice *device)
-{
-  CmDevicePrivate *priv= device->priv;
-  g_print ("%s: Scanning = %s, Networks = %d\n",
-	   cm_device_get_name (device), priv->scanning ? "TRUE" : "FALSE",
-	   g_list_length (priv->networks));
-}
-
 const gchar *
 cm_device_get_name (const CmDevice *device)
 {
@@ -375,19 +357,14 @@ device_propose_scan_call_notify (DBusGProxy *proxy,
   CmDevicePrivate *priv= device->priv;
   GError *error = NULL;
 
-  if (priv->propose_scan_proxy_call != call)
-    g_print ("%s Call mismatch!\n", __FUNCTION__);
-
   priv->propose_scan_proxy_call = NULL;
 
   if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
   {
-    g_print ("Error calling dbus_g_proxy_end_call in %s: %s\n",
+    g_debug ("Error calling dbus_g_proxy_end_call in %s: %s\n",
              __FUNCTION__, error->message);
     g_error_free (error);
   }
-
-  ASYNC_DEBUG ("Device::ProposeScan invocation complete.\n");
 }
 
 gboolean
@@ -404,17 +381,14 @@ cm_device_scan (CmDevice *device)
 
   case DEVICE_UNKNOWN:
   case DEVICE_ETHERNET:
-    g_print ("Not scanning on %s\n", cm_device_get_name (device));
     return FALSE;
   }
 
   if (priv->propose_scan_proxy_call)
   {
-    g_print ("Not scanning on %s - pending call.\n", cm_device_get_name (device));
+    /* Scan in progress */
     return FALSE;
   }
-
-  ASYNC_DEBUG ("Device::ProposeScan invocation starting.\n");
 
   priv->propose_scan_proxy_call = dbus_g_proxy_begin_call (
     priv->proxy, "ProposeScan",
@@ -422,7 +396,7 @@ cm_device_scan (CmDevice *device)
     G_TYPE_INVALID);
   if (!priv->propose_scan_proxy_call)
   {
-    g_print ("Net scanning on %s - ProposeScan failed.\n",
+    g_debug ("Net scanning on %s - ProposeScan failed.\n",
 	     cm_device_get_name (device));
     return FALSE;
   }
@@ -439,14 +413,11 @@ device_set_property_call_notify (DBusGProxy *proxy,
   CmDevicePrivate *priv = device->priv;
   GError *error = NULL;
 
-  if (priv->set_property_proxy_call != call)
-    g_print ("%s Call mismatch!\n", __FUNCTION__);
-
   priv->set_property_proxy_call = NULL;
 
   if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
   {
-    g_print ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
+    g_debug ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
              __FUNCTION__, cm_device_get_name (device), error->message);
     g_error_free (error);
   }
@@ -461,8 +432,6 @@ device_set_property_call_notify (DBusGProxy *proxy,
   g_free (priv->pending_property_name);
   g_value_unset (&priv->pending_property_value);
   priv->pending_property_name = NULL;
-
-  g_print ("%s:%s\n", __FUNCTION__, cm_device_get_name (device));
 }
 
 gboolean
@@ -470,8 +439,6 @@ device_set_property (CmDevice *device, const gchar *property, GValue *value)
 {
   CmDevicePrivate *priv = device->priv;
   GError *error = NULL;
-
-  g_print ("%s:%s\n", __FUNCTION__, cm_device_get_name (device));
 
   if (priv->set_property_proxy_call)
     return FALSE;
@@ -489,7 +456,7 @@ device_set_property (CmDevice *device, const gchar *property, GValue *value)
 
   if (!priv->set_property_proxy_call)
   {
-    g_print ("SetProperty failed: %s\n", error ? error->message : "Unknown");
+    g_debug ("SetProperty failed: %s\n", error ? error->message : "Unknown");
     g_error_free (error);
     return FALSE;
   }
@@ -567,19 +534,14 @@ device_join_network_call_notify (DBusGProxy *proxy, DBusGProxyCall *call,
   CmDevicePrivate *priv = device->priv;
   GError *error = NULL;
 
-  if (priv->join_network_proxy_call != call)
-    g_print ("%s call mismatch!\n", __FUNCTION__);
-
   priv->join_network_proxy_call = NULL;
 
   if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
   {
-    g_print ("Error calling dbus_g_proxy_end_call in %s: %s\n",
+    g_debug ("Error calling dbus_g_proxy_end_call in %s: %s\n",
              __FUNCTION__, error->message);
     g_error_free (error);
   }
-
-  ASYNC_DEBUG ("Device::JoinNetwork invocation complete.\n");
 }
 
 static void
@@ -599,8 +561,6 @@ cm_device_join_network (CmDevice *device, const gchar *ssid,
 
   if (priv->join_network_proxy_call)
   {
-    g_print ("Not joining network on %s - pending call\n",
-             cm_device_get_name (device));
     return FALSE;
   }
 
@@ -637,8 +597,6 @@ cm_device_join_network (CmDevice *device, const gchar *ssid,
     g_hash_table_insert (net_props, g_strdup ("WiFi.Passphrase"), secret_val);
   }
 
-  ASYNC_DEBUG ("Device::JoinNetwork invocation starting.\n");
-
   priv->join_network_proxy_call = dbus_g_proxy_begin_call
     (priv->proxy, "JoinNetwork", device_join_network_call_notify, device, NULL,
      dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE),
@@ -646,7 +604,7 @@ cm_device_join_network (CmDevice *device, const gchar *ssid,
 
   if (!priv->join_network_proxy_call)
   {
-    g_print ("Joining network on %s failed.\n",
+    g_debug ("Joining network on %s failed.\n",
              cm_device_get_name (device));
     return FALSE;
   }

@@ -33,7 +33,6 @@
  */
 #include <string.h>
 
-#include "debug.h"
 #include "gconnman-internal.h"
 
 G_DEFINE_TYPE (CmConnection, connection, G_TYPE_OBJECT);
@@ -144,7 +143,7 @@ connection_update_property (const gchar *key, GValue *value, CmConnection *conne
       priv->type = CONNECTION_ETHERNET;
     else
     {
-      g_print ("Unknown connection type on %s: %s\n",
+      g_debug ("Unknown connection type on %s: %s\n",
                cm_connection_get_interface (connection), type);
       priv->type = CONNECTION_UNKNOWN;
     }
@@ -170,7 +169,7 @@ connection_update_property (const gchar *key, GValue *value, CmConnection *conne
     priv->device = internal_device_new (priv->proxy, path, &error);
     if (!priv->device)
     {
-      g_print ("device_new failed in %s: %s\n", __FUNCTION__, error->message);
+      g_debug ("device_new failed in %s: %s\n", __FUNCTION__, error->message);
       g_error_free (error);
     }
 
@@ -184,7 +183,7 @@ connection_update_property (const gchar *key, GValue *value, CmConnection *conne
     priv->network = internal_network_new (priv->proxy, priv->device, path, &error);
     if (!priv->network)
     {
-      g_print ("network_new failed in %s: %s\n", __FUNCTION__, error->message);
+      g_debug ("network_new failed in %s: %s\n", __FUNCTION__, error->message);
       g_error_free (error);
     }
 
@@ -193,7 +192,7 @@ connection_update_property (const gchar *key, GValue *value, CmConnection *conne
   else
   {
     tmp = g_strdup_value_contents (value);
-    g_print ("Unhandled property on %s: %s = %s\n",
+    g_debug ("Unhandled property on %s: %s = %s\n",
              cm_connection_get_interface (connection), key, tmp);
     g_free (tmp);
   }
@@ -206,10 +205,6 @@ connection_property_change_handler_proxy (DBusGProxy *proxy,
 				          gpointer data)
 {
   CmConnection *connection = data;
-  gchar *tmp = g_strdup_value_contents (value);
-  g_print ("PropertyChange on %s: %s = %s\n",
-           cm_connection_get_interface (connection), key, tmp);
-  g_free (tmp);
 
   connection_update_property (key, value, connection);
 
@@ -226,16 +221,13 @@ connection_get_properties_call_notify (DBusGProxy *proxy,
   GError *error = NULL;
   GHashTable *properties = NULL;
 
-  if (priv->get_properties_proxy_call != call)
-    g_print ("%s Call mismatch!\n", __FUNCTION__);
-
   if (!dbus_g_proxy_end_call (
 	proxy, call, &error,
 	/* OUT values */
 	dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE),
 	&properties, G_TYPE_INVALID))
   {
-    g_print ("Error calling dbus_g_proxy_end_call in %s: %s\n",
+    g_debug ("Error calling dbus_g_proxy_end_call in %s: %s\n",
              __FUNCTION__, error->message);
     g_error_free (error);
     return;

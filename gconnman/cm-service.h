@@ -80,9 +80,6 @@ typedef enum
   SERVICE_INFO_FAVORITE   = 1 << 7,
 } CmServiceInfoMask;
 
-/* debug */
-void cm_service_print (const CmService *service);
-
 /* methods */
 gboolean cm_service_connect (CmService *service);
 gboolean cm_service_disconnect (CmService *service);

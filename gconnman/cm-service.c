@@ -25,7 +25,6 @@
 #include <glib.h>
 
 #include "gconnman-internal.h"
-#include "debug.h"
 
 #define SERVICE_ERROR service_error_quark ()
 
@@ -176,7 +175,7 @@ service_update_property (const gchar *key, GValue *value, CmService *service)
   else
   {
     tmp = g_strdup_value_contents (value);
-    g_print ("Unhandled property on %s: %s = %s\n",
+    g_debug ("Unhandled property on %s: %s = %s\n",
              cm_service_get_name (service), key, tmp);
     g_free (tmp);
   }
@@ -200,10 +199,7 @@ service_property_change_handler_proxy (DBusGProxy *proxy,
 				       gpointer data)
 {
   CmService *service = data;
-  gchar *tmp = g_strdup_value_contents (value);
-  g_print ("PropertyChange on %s: %s = %s\n",
-           cm_service_get_name (service), key, tmp);
-  g_free (tmp);
+
   service_update_property (key, value, service);
 
   service_emit_updated (service);
@@ -220,10 +216,6 @@ service_get_properties_call_notify (DBusGProxy *proxy,
   GHashTable *properties = NULL;
   gint count;
 
-  if (priv->get_properties_proxy_call != call)
-  {
-    g_print ("%s Call mismatch!\n", __FUNCTION__);
-  }
   priv->get_properties_proxy_call = NULL;
 
   if (!dbus_g_proxy_end_call (
@@ -232,7 +224,7 @@ service_get_properties_call_notify (DBusGProxy *proxy,
 	dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE),
 	&properties, G_TYPE_INVALID))
   {
-    g_print ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
+    g_debug ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
              __FUNCTION__, cm_service_get_name (service), error->message);
     g_error_free (error);
     return;
@@ -243,9 +235,6 @@ service_get_properties_call_notify (DBusGProxy *proxy,
   g_hash_table_foreach (properties, (GHFunc)service_update_property, service);
   g_hash_table_unref (properties);
   service_emit_updated (service);
-
-  ASYNC_DEBUG ("Service::GetProperties invocation complete (%d properties).\n",
-               count);
 
   priv->get_properties_proxy_call = NULL;
 }
@@ -322,19 +311,14 @@ service_disconnect_call_notify (DBusGProxy *proxy,
   CmServicePrivate *priv = service->priv;
   GError *error = NULL;
 
-  if (priv->disconnect_proxy_call != call)
-    g_print ("%s Call mismatch!\n", __FUNCTION__);
-
   priv->disconnect_proxy_call = NULL;
 
   if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
   {
-    g_print ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
+    g_debug ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
              __FUNCTION__, cm_service_get_name (service), error->message);
     g_error_free (error);
   }
-
-  g_print ("%s:%s\n", __FUNCTION__, cm_service_get_name (service));
 }
 
 gboolean
@@ -342,8 +326,6 @@ cm_service_disconnect (CmService *service)
 {
   CmServicePrivate *priv = service->priv;
   GError *error = NULL;
-
-  g_print ("%s:%s\n", __FUNCTION__, cm_service_get_name (service));
 
   if (!priv->connected && !priv->connect_proxy_call)
     return TRUE;
@@ -360,7 +342,7 @@ cm_service_disconnect (CmService *service)
 
   if (!priv->disconnect_proxy_call)
   {
-    g_print ("Disconnect failed: %s\n", error ? error->message : "Unknown");
+    g_debug ("Disconnect failed: %s\n", error ? error->message : "Unknown");
     g_error_free (error);
     return FALSE;
   }
@@ -377,19 +359,14 @@ service_connect_call_notify (DBusGProxy *proxy,
   CmServicePrivate *priv = service->priv;
   GError *error = NULL;
 
-  if (priv->connect_proxy_call != call)
-    g_print ("%s Call mismatch!\n", __FUNCTION__);
-
   priv->connect_proxy_call = NULL;
 
   if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
   {
-    g_print ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
+    g_debug ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
              __FUNCTION__, cm_service_get_name (service), error->message);
     g_error_free (error);
   }
-
-  g_print ("%s:%s\n", __FUNCTION__, cm_service_get_name (service));
 }
 
 gboolean
@@ -397,8 +374,6 @@ cm_service_connect (CmService *service)
 {
   CmServicePrivate *priv = service->priv;
   GError *error = NULL;
-
-  g_print ("%s:%s\n", __FUNCTION__, cm_service_get_name (service));
 
   if (priv->connected && !priv->disconnect_proxy_call)
     return TRUE;
@@ -414,7 +389,7 @@ cm_service_connect (CmService *service)
     G_TYPE_INVALID);
   if (!priv->connect_proxy_call)
   {
-    g_print ("Connect failed: %s\n", error ? error->message : "Unknown");
+    g_debug ("Connect failed: %s\n", error ? error->message : "Unknown");
     g_error_free (error);
     return FALSE;
   }
@@ -431,9 +406,6 @@ service_remove_call_notify (DBusGProxy *proxy,
   CmServicePrivate *priv = service->priv;
   GError *error = NULL;
 
-  if (priv->remove_proxy_call != call)
-    g_print ("%s Call mismatch!\n", __FUNCTION__);
-
   priv->remove_proxy_call = NULL;
 
   /* Clear the local passphrase */
@@ -442,12 +414,10 @@ service_remove_call_notify (DBusGProxy *proxy,
 
   if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
   {
-    g_print ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
+    g_debug ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
              __FUNCTION__, cm_service_get_name (service), error->message);
     g_error_free (error);
   }
-
-  g_print ("%s:%s\n", __FUNCTION__, cm_service_get_name (service));
 }
 
 gboolean
@@ -455,8 +425,6 @@ cm_service_remove (CmService *service)
 {
   CmServicePrivate *priv = service->priv;
   GError *error = NULL;
-
-  g_print ("%s:%s\n", __FUNCTION__, cm_service_get_name (service));
 
   if (priv->remove_proxy_call)
     return FALSE;
@@ -467,7 +435,7 @@ cm_service_remove (CmService *service)
     G_TYPE_INVALID);
   if (!priv->remove_proxy_call)
   {
-    g_print ("Remove failed: %s\n", error ? error->message : "Unknown");
+    g_debug ("Remove failed: %s\n", error ? error->message : "Unknown");
     g_error_free (error);
     return FALSE;
   }
@@ -484,14 +452,11 @@ service_set_property_call_notify (DBusGProxy *proxy,
   CmServicePrivate *priv = service->priv;
   GError *error = NULL;
 
-  if (priv->set_property_proxy_call != call)
-    g_print ("%s Call mismatch!\n", __FUNCTION__);
-
   priv->set_property_proxy_call = NULL;
 
   if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
   {
-    g_print ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
+    g_debug ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
              __FUNCTION__, cm_service_get_name (service), error->message);
     g_error_free (error);
   }
@@ -506,8 +471,6 @@ service_set_property_call_notify (DBusGProxy *proxy,
   g_free (priv->pending_property_name);
   g_value_unset (&priv->pending_property_value);
   priv->pending_property_name = NULL;
-
-  g_print ("%s:%s\n", __FUNCTION__, cm_service_get_name (service));
 }
 
 gboolean
@@ -515,8 +478,6 @@ cm_service_set_property (CmService *service, const gchar *property, GValue *valu
 {
   CmServicePrivate *priv = service->priv;
   GError *error = NULL;
-
-  g_print ("%s:%s\n", __FUNCTION__, cm_service_get_name (service));
 
   if (priv->set_property_proxy_call)
     return FALSE;
@@ -534,7 +495,7 @@ cm_service_set_property (CmService *service, const gchar *property, GValue *valu
 
   if (!priv->set_property_proxy_call)
   {
-    g_print ("SetProperty failed: %s\n", error ? error->message : "Unknown");
+    g_debug ("SetProperty failed: %s\n", error ? error->message : "Unknown");
     g_error_free (error);
     return FALSE;
   }
@@ -550,19 +511,14 @@ service_move_before_call_notify (DBusGProxy *proxy, DBusGProxyCall *call,
   CmServicePrivate *priv = service->priv;
   GError *error = NULL;
 
-  if (priv->move_before_proxy_call != call)
-    g_print ("%s call mismatch!\n", __FUNCTION__);
-
   priv->move_before_proxy_call = NULL;
 
   if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
   {
-    g_print ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
+    g_debug ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
              __FUNCTION__, cm_service_get_name (service), error->message);
     g_error_free (error);
   }
-
-  g_print ("%s:%s\n", __FUNCTION__, cm_service_get_name (service));
 }
 
 gboolean
@@ -571,8 +527,6 @@ cm_service_move_before (CmService *service, CmService *before)
   CmServicePrivate *priv = service->priv;
   GError *error = NULL;
   const gchar *path = cm_service_get_path (before);
-
-  g_print ("%s:%s\n", __FUNCTION__, cm_service_get_name (service));
 
   service_proxy_call_destroy (service, &priv->move_after_proxy_call);
 
@@ -587,7 +541,7 @@ cm_service_move_before (CmService *service, CmService *before)
 
   if (!priv->move_before_proxy_call)
   {
-    g_print ("MoveBefore failed: %s\n", error ? error->message : "Unknown");
+    g_debug ("MoveBefore failed: %s\n", error ? error->message : "Unknown");
     g_error_free (error);
     return FALSE;
   }
@@ -603,19 +557,14 @@ service_move_after_call_notify (DBusGProxy *proxy, DBusGProxyCall *call,
   CmServicePrivate *priv = service->priv;
   GError *error = NULL;
 
-  if (priv->move_after_proxy_call != call)
-    g_print ("%s call mismatch!\n", __FUNCTION__);
-
   priv->move_after_proxy_call = NULL;
 
   if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
   {
-    g_print ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
+    g_debug ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
              __FUNCTION__, cm_service_get_name (service), error->message);
     g_error_free (error);
   }
-
-  g_print ("%s:%s\n", __FUNCTION__, cm_service_get_name (service));
 }
 
 gboolean
@@ -624,8 +573,6 @@ cm_service_move_after (CmService *service, CmService *after)
   CmServicePrivate *priv = service->priv;
   GError *error = NULL;
   const gchar *path = cm_service_get_path (after);
-
-  g_print ("%s:%s\n", __FUNCTION__, cm_service_get_name (service));
 
   service_proxy_call_destroy (service, &priv->move_before_proxy_call);
 
@@ -640,7 +587,7 @@ cm_service_move_after (CmService *service, CmService *after)
 
   if (!priv->move_after_proxy_call)
   {
-    g_print ("MoveAfter failed: %s\n", error ? error->message : "Unknown");
+    g_debug ("MoveAfter failed: %s\n", error ? error->message : "Unknown");
     g_error_free (error);
     return FALSE;
   }
@@ -720,9 +667,6 @@ cm_service_set_passphrase (CmService *service, const gchar *passphrase)
 {
   GValue value = { 0 };
   gboolean ret;
-
-  g_print ("Setting passphrase for %s to %s\n", cm_service_get_name (service),
-           passphrase);
 
   g_value_init (&value, G_TYPE_STRING);
   g_value_set_static_string (&value, passphrase);

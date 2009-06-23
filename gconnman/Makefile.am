@@ -20,7 +20,6 @@ lib_LTLIBRARIES = libgconnman.la
 
 libgconnman_la_SOURCES = gconnman-internal.h \
 	cm-manager.c cm-device.c cm-network.c cm-service.c cm-connection.c \
-	debug.h \
 	$(MARSHALFILES)
 
 libgconnman_la_LIBADD = @GCONNMAN_LIBS@

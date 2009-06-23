@@ -24,7 +24,6 @@
 #include <string.h> /* strcmp */
 #include <stdlib.h> /* system */
 
-#include "debug.h"
 #include "connman-marshal.h"
 #include "gconnman-internal.h"
 
@@ -199,11 +198,10 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
       device = cm_manager_find_device (manager, path);
       if (!device)
       {
-        g_print ("New device found: %s\n", path);
         device = internal_device_new (priv->proxy, path, &error);
         if (!device)
         {
-          g_print ("device_new failed in %s: %s\n", __FUNCTION__,
+          g_debug ("device_new failed in %s: %s\n", __FUNCTION__,
                    error->message);
           g_error_free (error);
           continue;
@@ -257,11 +255,10 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
       connection = cm_manager_find_connection (manager, path);
       if (!connection)
       {
-        g_print ("New connection found: %s\n", path);
         connection = internal_connection_new (priv->proxy, path, &error);
         if (!connection)
         {
-          g_print ("connection_new failed in %s: %s\n", __FUNCTION__,
+          g_debug ("connection_new failed in %s: %s\n", __FUNCTION__,
                    error->message);
           g_error_free (error);
           continue;
@@ -315,11 +312,10 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
       service = cm_manager_find_service (manager, path);
       if (!service)
       {
-        g_print ("New service found: %s\n", path);
         service = internal_service_new (priv->proxy, path, i, &error);
         if (!service)
         {
-          g_print ("service_new failed in %s: %s\n", __FUNCTION__,
+          g_debug ("service_new failed in %s: %s\n", __FUNCTION__,
                    error->message);
           g_error_free (error);
           continue;
@@ -341,6 +337,13 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
 
     g_signal_emit (manager, manager_signals[SIGNAL_SERVICES_CHANGED], 0);
   }
+  else if (!strcmp ("Profiles", key))
+  {
+  }
+  else if (!strcmp ("ActiveProfile", key))
+  {
+    gchar *profile = g_value_get_boxed (value);
+  }
   else if (!strcmp ("OfflineMode", key))
   {
     priv->offline_mode = g_value_get_boolean (value);
@@ -361,7 +364,7 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
   else
   {
     tmp = g_strdup_value_contents (value);
-    g_print ("Unhandled property on Manager: %s = %s\n",
+    g_debug ("Unhandled property on Manager: %s = %s\n",
              key, tmp);
     g_free (tmp);
   }
@@ -377,16 +380,13 @@ manager_get_properties_call_notify (DBusGProxy *proxy,
   GError *error = NULL;
   GHashTable *properties = NULL;
 
-  if (priv->get_properties_proxy_call != call)
-    g_print ("%s call mismatch!\n", __FUNCTION__);
-
   if (!dbus_g_proxy_end_call (
         proxy, call, &error,
         /* OUT values */
         dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE),
         &properties, G_TYPE_INVALID))
   {
-    g_print ("Error calling dbus_g_proxy_end_call in %s: %s\n",
+    g_debug ("Error calling dbus_g_proxy_end_call in %s: %s\n",
              __FUNCTION__, error->message);
     g_error_free (error);
     return;
@@ -432,10 +432,6 @@ cm_manager_refresh (CmManager *manager)
 
   if (!priv->get_properties_proxy_call)
   {
-    /*g_set_error (&error, MANAGER_ERROR, MANAGER_ERROR_CONNMAN_GET_PROPERTIES,
-                 "Refresh error! Invocation of GetProperties failed.");
-    g_object_unref (manager);*/
-    g_print ("Refresh error! Error invoking GetProperties.");
     return FALSE;
   }
 
@@ -450,9 +446,6 @@ manager_property_change_handler_proxy (DBusGProxy *proxy,
 				      gpointer data)
 {
   CmManager *manager = data;
-  gchar *tmp = g_strdup_value_contents (value);
-  g_print ("PropertyChange on Manager: %s = %s\n", key, tmp);
-  g_free (tmp);
 
   manager_update_property (key, value, manager);
 
@@ -535,14 +528,11 @@ manager_set_property_call_notify (DBusGProxy *proxy,
   CmManagerPrivate *priv = manager->priv;
   GError *error = NULL;
 
-  if (priv->set_property_proxy_call != call)
-    g_print ("%s call mismatch!\n", __FUNCTION__);
-
   priv->set_property_proxy_call = NULL;
 
   if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
   {
-    g_print ("Error calling dbus_g_proxy_end_call in %s on Manager: %s\n",
+    g_debug ("Error calling dbus_g_proxy_end_call in %s on Manager: %s\n",
              __FUNCTION__, error->message);
     g_error_free (error);
   }
@@ -557,8 +547,6 @@ manager_set_property_call_notify (DBusGProxy *proxy,
   g_free (priv->pending_property_name);
   g_value_unset (&priv->pending_property_value);
   priv->pending_property_name = NULL;
-
-  g_print ("%s:CmManager\n", __FUNCTION__);
 }
 
 gboolean
@@ -566,8 +554,6 @@ manager_set_property (CmManager *manager, const gchar *property, GValue *value)
 {
   CmManagerPrivate *priv = manager->priv;
   GError *error = NULL;
-
-  g_print ("CmManager:%s\n", __FUNCTION__);
 
   if (priv->set_property_proxy_call)
     return FALSE;
@@ -585,7 +571,7 @@ manager_set_property (CmManager *manager, const gchar *property, GValue *value)
 
   if (!priv->set_property_proxy_call)
   {
-    g_print ("SetProperty failed %s\n", error ? error->message : "Unknown");
+    g_debug ("SetProperty failed %s\n", error ? error->message : "Unknown");
     g_error_free (error);
     return FALSE;
   }
