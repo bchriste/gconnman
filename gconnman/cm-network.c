@@ -68,6 +68,8 @@ struct _CmNetworkPrivate
   gchar *security;
   gchar *passphrase;
   gchar *address;
+  uint frequency;
+  uint channel;
   CmNetworkInfoMask flags;
 
   time_t last_update;
@@ -212,6 +214,11 @@ network_update_property (const gchar *key, GValue *value, CmNetwork *network)
       priv->flags &= ~NETWORK_INFO_PASSPHRASE;
     }
   }
+  else if (!strcmp ("WiFi.Channel", key))
+  {
+    priv->channel = g_value_get_uint (value);
+    priv->flags |= NETWORK_INFO_CHANNEL;
+  }
   else if (!strcmp ("Name", key))
   {
     g_free (priv->name);
@@ -224,6 +231,11 @@ network_update_property (const gchar *key, GValue *value, CmNetwork *network)
     priv->address = g_value_dup_string (value);
     priv->flags |= NETWORK_INFO_ADDRESS;
   }
+  else if (!strcmp ("Frequency", key))
+  {
+    priv->frequency = g_value_get_uint (value);
+    priv->flags |= NETWORK_INFO_FREQUENCY;
+  }
   else
   {
     tmp = g_strdup_value_contents (value);
@@ -231,6 +243,7 @@ network_update_property (const gchar *key, GValue *value, CmNetwork *network)
              cm_network_get_name (network), key, tmp);
     g_free (tmp);
   }
+  network_emit_updated (network);
 }
 
 static void
@@ -272,7 +285,6 @@ network_get_properties_call_notify (DBusGProxy *proxy,
 
   g_hash_table_foreach (properties, (GHFunc)network_update_property, network);
   g_hash_table_unref (properties);
-  network_emit_updated (network);
 }
 
 CmNetwork *
@@ -441,7 +453,7 @@ cm_network_connect (CmNetwork *network)
     G_TYPE_INVALID);
   if (!priv->connect_proxy_call)
   {
-    g_print ("Connect failed: %s\n", error ? error->message : "Unknown");
+    g_debug ("Connect failed: %s\n", error ? error->message : "Unknown");
     g_error_free (error);
     return FALSE;
   }
@@ -493,6 +505,20 @@ cm_network_get_priority (const CmNetwork *network)
 {
   CmNetworkPrivate *priv = network->priv;
   return priv->priority;
+}
+
+guint
+cm_network_get_channel (CmNetwork *network)
+{
+  CmNetworkPrivate *priv = network->priv;
+  return priv->channel;
+}
+
+guint
+cm_network_get_frequency (CmNetwork *network)
+{
+  CmNetworkPrivate *priv = network->priv;
+  return priv->frequency;
 }
 
 static void
@@ -666,6 +692,8 @@ network_init (CmNetwork *self)
   self->priv->passphrase = NULL;
   self->priv->address = NULL;
   self->priv->address = NULL;
+  self->priv->channel = 0;
+  self->priv->frequency = 0;
 }
 
 static void

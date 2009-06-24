@@ -79,6 +79,8 @@ typedef enum
   NETWORK_INFO_PASSPHRASE = 1 << 6,
   NETWORK_INFO_MODE       = 1 << 7,
   NETWORK_INFO_ADDRESS    = 1 << 8,
+  NETWORK_INFO_FREQUENCY  = 1 << 9,
+  NETWORK_INFO_CHANNEL    = 1 << 10,
 } CmNetworkInfoMask;
 
 /* methods */
@@ -93,11 +95,15 @@ gboolean cm_network_is_secure (const CmNetwork *network);
 gulong cm_network_get_timestamp (const CmNetwork *network);
 guchar cm_network_get_strength (const CmNetwork *network);
 guchar cm_network_get_priority (const CmNetwork *network);
-gboolean cm_network_has_passphrase (const CmNetwork *network);
-gint cm_network_get_passphrase_length (const CmNetwork *network);
-CmDevice *cm_network_get_device (CmNetwork *network);
-gboolean cm_network_set_passphrase (CmNetwork *network, const gchar *passphrase);
 gchar *cm_network_get_mode (CmNetwork *network);
 gchar *cm_network_get_address (CmNetwork *network);
+guint cm_network_get_frequency (CmNetwork *network);
+guint cm_network_get_channel (CmNetwork *network);
+CmDevice *cm_network_get_device (CmNetwork *network);
+
+gboolean cm_network_has_passphrase (const CmNetwork *network);
+gint cm_network_get_passphrase_length (const CmNetwork *network);
+
+gboolean cm_network_set_passphrase (CmNetwork *network, const gchar *passphrase);
 
 #endif
