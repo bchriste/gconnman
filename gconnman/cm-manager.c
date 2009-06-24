@@ -47,9 +47,6 @@ struct _CmManagerPrivate
   gchar *state;
   gchar *policy;
 
-  DBusGProxyCall *get_properties_proxy_call;
-  DBusGProxyCall *set_property_proxy_call;
-
   GValue pending_property_value;
   gchar *pending_property_name;
 };
@@ -80,16 +77,6 @@ static void
 manager_emit_updated (CmManager *manager)
 {
   g_signal_emit (manager, manager_signals[SIGNAL_UPDATE], 0 /* detail */);
-}
-
-static void
-manager_proxy_call_destroy (CmManager *manager, DBusGProxyCall **proxy_call)
-{
-  CmManagerPrivate *priv = manager->priv;
-  if (*proxy_call == NULL)
-    return;
-  dbus_g_proxy_cancel_call (priv->proxy, *proxy_call);
-  *proxy_call = NULL;
 }
 
 CmDevice *
@@ -377,7 +364,6 @@ manager_get_properties_call_notify (DBusGProxy *proxy,
                                     gpointer data)
 {
   CmManager *manager = data;
-  CmManagerPrivate *priv = manager->priv;
   GError *error = NULL;
   GHashTable *properties = NULL;
 
@@ -396,14 +382,13 @@ manager_get_properties_call_notify (DBusGProxy *proxy,
   g_hash_table_foreach (properties, (GHFunc)manager_update_property, manager);
   g_hash_table_unref (properties);
   manager_emit_updated (manager);
-
-  priv->get_properties_proxy_call = NULL;
 }
 
 gboolean
 cm_manager_refresh (CmManager *manager)
 {
   CmManagerPrivate *priv = manager->priv;
+  DBusGProxyCall *call;
 
   /* Remove all the prior devices */
   while (priv->devices)
@@ -426,12 +411,11 @@ cm_manager_refresh (CmManager *manager)
     priv->services = g_list_delete_link (priv->services, priv->services);
   }
 
-  priv->get_properties_proxy_call = dbus_g_proxy_begin_call (
-    priv->proxy, "GetProperties",
-    manager_get_properties_call_notify, manager, NULL,
-    G_TYPE_INVALID);
+  call = dbus_g_proxy_begin_call (priv->proxy, "GetProperties",
+                                  manager_get_properties_call_notify, manager,
+                                  NULL, G_TYPE_INVALID);
 
-  if (!priv->get_properties_proxy_call)
+  if (!call)
   {
     return FALSE;
   }
@@ -529,8 +513,6 @@ manager_set_property_call_notify (DBusGProxy *proxy,
   CmManagerPrivate *priv = manager->priv;
   GError *error = NULL;
 
-  priv->set_property_proxy_call = NULL;
-
   if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
   {
     g_debug ("Error calling dbus_g_proxy_end_call in %s on Manager: %s\n",
@@ -555,22 +537,18 @@ manager_set_property (CmManager *manager, const gchar *property, GValue *value)
 {
   CmManagerPrivate *priv = manager->priv;
   GError *error = NULL;
-
-  if (priv->set_property_proxy_call)
-    return FALSE;
+  DBusGProxyCall *call;
 
   priv->pending_property_name = g_strdup (property);
   g_value_init (&priv->pending_property_value, G_VALUE_TYPE (value));
   g_value_copy (value, &priv->pending_property_value);
 
-  priv->set_property_proxy_call = dbus_g_proxy_begin_call (
-    priv->proxy, "SetProperty",
-    manager_set_property_call_notify, manager, NULL,
-    G_TYPE_STRING, property,
-    G_TYPE_VALUE, value,
-    G_TYPE_INVALID);
+  call = dbus_g_proxy_begin_call (priv->proxy, "SetProperty",
+                                  manager_set_property_call_notify, manager,
+                                  NULL, G_TYPE_STRING, property, G_TYPE_VALUE,
+                                  value, G_TYPE_INVALID);
 
-  if (!priv->set_property_proxy_call)
+  if (!call)
   {
     g_debug ("SetProperty failed %s\n", error ? error->message : "Unknown");
     g_error_free (error);
@@ -737,9 +715,6 @@ manager_dispose (GObject *object)
     priv->proxy, "PropertyChanged",
     G_CALLBACK (manager_property_change_handler_proxy),
     manager);
-
-    manager_proxy_call_destroy (manager, &priv->get_properties_proxy_call);
-    manager_proxy_call_destroy (manager, &priv->set_property_proxy_call);
 
     g_object_unref (priv->proxy);
     priv->proxy = NULL;

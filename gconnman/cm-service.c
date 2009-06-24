@@ -53,14 +53,6 @@ struct _CmServicePrivate
 
   gulong last_update;
 
-  DBusGProxyCall *get_properties_proxy_call;
-  DBusGProxyCall *connect_proxy_call;
-  DBusGProxyCall *disconnect_proxy_call;
-  DBusGProxyCall *remove_proxy_call;
-  DBusGProxyCall *set_property_proxy_call;
-  DBusGProxyCall *move_before_proxy_call;
-  DBusGProxyCall *move_after_proxy_call;
-
   GValue pending_property_value;
   gchar *pending_property_name;
 };
@@ -182,17 +174,6 @@ service_update_property (const gchar *key, GValue *value, CmService *service)
 }
 
 static void
-service_proxy_call_destroy (CmService *service, DBusGProxyCall **proxy_call)
-{
-  CmServicePrivate *priv = service->priv;
-  if (*proxy_call == NULL)
-    return;
-  dbus_g_proxy_cancel_call (priv->proxy, *proxy_call);
-  *proxy_call = NULL;
-}
-
-
-static void
 service_property_change_handler_proxy (DBusGProxy *proxy,
 				       const gchar *key,
 				       GValue *value,
@@ -211,12 +192,9 @@ service_get_properties_call_notify (DBusGProxy *proxy,
 				   gpointer data)
 {
   CmService *service = data;
-  CmServicePrivate *priv = service->priv;
   GError *error = NULL;
   GHashTable *properties = NULL;
   gint count;
-
-  priv->get_properties_proxy_call = NULL;
 
   if (!dbus_g_proxy_end_call (
 	proxy, call, &error,
@@ -235,8 +213,6 @@ service_get_properties_call_notify (DBusGProxy *proxy,
   g_hash_table_foreach (properties, (GHFunc)service_update_property, service);
   g_hash_table_unref (properties);
   service_emit_updated (service);
-
-  priv->get_properties_proxy_call = NULL;
 }
 
 CmService *
@@ -245,6 +221,7 @@ internal_service_new (DBusGProxy *proxy, const gchar *path, int order,
 {
   CmService *service;
   CmServicePrivate *priv;
+  DBusGProxyCall *call;
 
   service = g_object_new (CM_TYPE_SERVICE, NULL);
   if (!service)
@@ -285,11 +262,10 @@ internal_service_new (DBusGProxy *proxy, const gchar *path, int order,
     G_CALLBACK (service_property_change_handler_proxy),
     service, NULL);
 
-  priv->get_properties_proxy_call = dbus_g_proxy_begin_call (
-    priv->proxy, "GetProperties",
-    service_get_properties_call_notify, service, NULL,
-    G_TYPE_INVALID);
-  if (!priv->get_properties_proxy_call)
+  call = dbus_g_proxy_begin_call (priv->proxy, "GetProperties",
+                                  service_get_properties_call_notify, service,
+                                  NULL, G_TYPE_INVALID);
+  if (!call)
   {
     g_set_error (error, SERVICE_ERROR, SERVICE_ERROR_CONNMAN_GET_PROPERTIES,
                  "Invocation of GetProperties failed.");
@@ -308,10 +284,7 @@ service_disconnect_call_notify (DBusGProxy *proxy,
                                 gpointer data)
 {
   CmService *service = data;
-  CmServicePrivate *priv = service->priv;
   GError *error = NULL;
-
-  priv->disconnect_proxy_call = NULL;
 
   if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
   {
@@ -326,21 +299,16 @@ cm_service_disconnect (CmService *service)
 {
   CmServicePrivate *priv = service->priv;
   GError *error = NULL;
+  DBusGProxyCall *call;
 
-  if (!priv->connected && !priv->connect_proxy_call)
+  if (!priv->connected)
     return TRUE;
 
-  service_proxy_call_destroy (service, &priv->connect_proxy_call);
+  call = dbus_g_proxy_begin_call (priv->proxy, "Disconnect",
+                                  service_disconnect_call_notify, service,
+                                  NULL, G_TYPE_INVALID);
 
-  if (priv->disconnect_proxy_call)
-    return FALSE;
-
-  priv->disconnect_proxy_call = dbus_g_proxy_begin_call (
-    priv->proxy, "Disconnect",
-    service_disconnect_call_notify, service, NULL,
-    G_TYPE_INVALID);
-
-  if (!priv->disconnect_proxy_call)
+  if (!call)
   {
     g_debug ("Disconnect failed: %s\n", error ? error->message : "Unknown");
     g_error_free (error);
@@ -356,10 +324,7 @@ service_connect_call_notify (DBusGProxy *proxy,
                              gpointer data)
 {
   CmService *service = data;
-  CmServicePrivate *priv = service->priv;
   GError *error = NULL;
-
-  priv->connect_proxy_call = NULL;
 
   if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
   {
@@ -374,20 +339,15 @@ cm_service_connect (CmService *service)
 {
   CmServicePrivate *priv = service->priv;
   GError *error = NULL;
+  DBusGProxyCall *call;
 
-  if (priv->connected && !priv->disconnect_proxy_call)
+  if (priv->connected)
     return TRUE;
 
-  service_proxy_call_destroy (service, &priv->disconnect_proxy_call);
-
-  if (priv->connect_proxy_call)
-    return FALSE;
-
-  priv->connect_proxy_call = dbus_g_proxy_begin_call (
-    priv->proxy, "Connect",
-    service_connect_call_notify, service, NULL,
-    G_TYPE_INVALID);
-  if (!priv->connect_proxy_call)
+  call = dbus_g_proxy_begin_call (priv->proxy, "Connect",
+                                  service_connect_call_notify, service, NULL,
+                                  G_TYPE_INVALID);
+  if (!call)
   {
     g_debug ("Connect failed: %s\n", error ? error->message : "Unknown");
     g_error_free (error);
@@ -406,8 +366,6 @@ service_remove_call_notify (DBusGProxy *proxy,
   CmServicePrivate *priv = service->priv;
   GError *error = NULL;
 
-  priv->remove_proxy_call = NULL;
-
   /* Clear the local passphrase */
   g_free (priv->passphrase);
   priv->passphrase = g_strdup ("");
@@ -425,15 +383,12 @@ cm_service_remove (CmService *service)
 {
   CmServicePrivate *priv = service->priv;
   GError *error = NULL;
+  DBusGProxyCall *call;
 
-  if (priv->remove_proxy_call)
-    return FALSE;
-
-  priv->remove_proxy_call = dbus_g_proxy_begin_call (
-    priv->proxy, "Remove",
-    service_remove_call_notify, service, NULL,
-    G_TYPE_INVALID);
-  if (!priv->remove_proxy_call)
+  call = dbus_g_proxy_begin_call (priv->proxy, "Remove",
+                                  service_remove_call_notify, service, NULL,
+                                  G_TYPE_INVALID);
+  if (!call)
   {
     g_debug ("Remove failed: %s\n", error ? error->message : "Unknown");
     g_error_free (error);
@@ -451,8 +406,6 @@ service_set_property_call_notify (DBusGProxy *proxy,
   CmService *service = data;
   CmServicePrivate *priv = service->priv;
   GError *error = NULL;
-
-  priv->set_property_proxy_call = NULL;
 
   if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
   {
@@ -474,26 +427,23 @@ service_set_property_call_notify (DBusGProxy *proxy,
 }
 
 gboolean
-cm_service_set_property (CmService *service, const gchar *property, GValue *value)
+cm_service_set_property (CmService *service, const gchar *property,
+                         GValue *value)
 {
   CmServicePrivate *priv = service->priv;
   GError *error = NULL;
-
-  if (priv->set_property_proxy_call)
-    return FALSE;
+  DBusGProxyCall *call;
 
   priv->pending_property_name = g_strdup (property);
   g_value_init (&priv->pending_property_value, G_VALUE_TYPE (value));
   g_value_copy (value, &priv->pending_property_value);
 
-  priv->set_property_proxy_call = dbus_g_proxy_begin_call (
-    priv->proxy, "SetProperty",
-    service_set_property_call_notify, service, NULL,
-    G_TYPE_STRING, property,
-    G_TYPE_VALUE, value,
-    G_TYPE_INVALID);
+  call = dbus_g_proxy_begin_call (priv->proxy, "SetProperty",
+                                  service_set_property_call_notify, service,
+                                  NULL, G_TYPE_STRING, property,
+                                  G_TYPE_VALUE, value, G_TYPE_INVALID);
 
-  if (!priv->set_property_proxy_call)
+  if (!call)
   {
     g_debug ("SetProperty failed: %s\n", error ? error->message : "Unknown");
     g_error_free (error);
@@ -508,10 +458,7 @@ service_move_before_call_notify (DBusGProxy *proxy, DBusGProxyCall *call,
                                  gpointer data)
 {
   CmService *service = data;
-  CmServicePrivate *priv = service->priv;
   GError *error = NULL;
-
-  priv->move_before_proxy_call = NULL;
 
   if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
   {
@@ -527,19 +474,13 @@ cm_service_move_before (CmService *service, CmService *before)
   CmServicePrivate *priv = service->priv;
   GError *error = NULL;
   const gchar *path = cm_service_get_path (before);
+  DBusGProxyCall *call;
 
-  service_proxy_call_destroy (service, &priv->move_after_proxy_call);
+  call = dbus_g_proxy_begin_call (priv->proxy, "MoveBefore",
+                                  service_move_before_call_notify, service,
+                                  NULL, G_TYPE_STRING, path, G_TYPE_INVALID);
 
-  if (priv->move_after_proxy_call)
-    return FALSE;
-
-  priv->move_before_proxy_call = dbus_g_proxy_begin_call
-    (priv->proxy, "MoveBefore",
-     service_move_before_call_notify, service, NULL,
-     G_TYPE_STRING, path,
-     G_TYPE_INVALID);
-
-  if (!priv->move_before_proxy_call)
+  if (!call)
   {
     g_debug ("MoveBefore failed: %s\n", error ? error->message : "Unknown");
     g_error_free (error);
@@ -554,10 +495,7 @@ service_move_after_call_notify (DBusGProxy *proxy, DBusGProxyCall *call,
                                    gpointer data)
 {
   CmService *service = data;
-  CmServicePrivate *priv = service->priv;
   GError *error = NULL;
-
-  priv->move_after_proxy_call = NULL;
 
   if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
   {
@@ -573,19 +511,13 @@ cm_service_move_after (CmService *service, CmService *after)
   CmServicePrivate *priv = service->priv;
   GError *error = NULL;
   const gchar *path = cm_service_get_path (after);
+  DBusGProxyCall *call;
 
-  service_proxy_call_destroy (service, &priv->move_before_proxy_call);
+  call = dbus_g_proxy_begin_call (priv->proxy, "MoveAfter",
+                                  service_move_after_call_notify, service, NULL,
+                                  G_TYPE_STRING, path, G_TYPE_INVALID);
 
-  if (priv->move_before_proxy_call)
-    return FALSE;
-
-  priv->move_after_proxy_call = dbus_g_proxy_begin_call
-    (priv->proxy, "MoveAfter",
-     service_move_after_call_notify, service, NULL,
-     G_TYPE_STRING, path,
-     G_TYPE_INVALID);
-
-  if (!priv->move_after_proxy_call)
+  if (!call)
   {
     g_debug ("MoveAfter failed: %s\n", error ? error->message : "Unknown");
     g_error_free (error);
@@ -752,13 +684,6 @@ service_dispose (GObject *object)
       priv->proxy, "PropertyChanged",
       G_CALLBACK (service_property_change_handler_proxy),
       service);
-
-    service_proxy_call_destroy (service, &priv->get_properties_proxy_call);
-    service_proxy_call_destroy (service, &priv->connect_proxy_call);
-    service_proxy_call_destroy (service, &priv->disconnect_proxy_call);
-    service_proxy_call_destroy (service, &priv->set_property_proxy_call);
-    service_proxy_call_destroy (service, &priv->move_before_proxy_call);
-    service_proxy_call_destroy (service, &priv->move_after_proxy_call);
 
     g_object_unref (priv->proxy);
     priv->proxy = NULL;

@@ -71,13 +71,7 @@ struct _CmNetworkPrivate
   uint frequency;
   uint channel;
   CmNetworkInfoMask flags;
-
   time_t last_update;
-
-  DBusGProxyCall *get_properties_proxy_call;
-  DBusGProxyCall *connect_proxy_call;
-  DBusGProxyCall *disconnect_proxy_call;
-  DBusGProxyCall *set_property_proxy_call;
 
   GValue pending_property_value;
   gchar *pending_property_name;
@@ -305,6 +299,7 @@ internal_network_new (DBusGProxy *proxy,
 {
   CmNetwork *network;
   CmNetworkPrivate *priv;
+  DBusGProxyCall *call;
 
   network = g_object_new (CM_TYPE_NETWORK, NULL);
   if (!network)
@@ -345,11 +340,11 @@ internal_network_new (DBusGProxy *proxy,
     G_CALLBACK (network_property_change_handler_proxy),
     network, NULL);
 
-  priv->get_properties_proxy_call = dbus_g_proxy_begin_call (
-    priv->proxy, "GetProperties",
-    network_get_properties_call_notify, network, NULL,
-    G_TYPE_INVALID);
-  if (!priv->get_properties_proxy_call)
+  call = dbus_g_proxy_begin_call (priv->proxy, "GetProperties",
+                                  network_get_properties_call_notify,
+                                  network, NULL,
+                                  G_TYPE_INVALID);
+  if (!call)
   {
     g_set_error (error, NETWORK_ERROR, NETWORK_ERROR_CONNMAN_GET_PROPERTIES,
                  "Invocation of GetProperties failed.");
@@ -381,10 +376,7 @@ network_disconnect_call_notify (DBusGProxy *proxy,
                                 gpointer data)
 {
   CmNetwork *network = data;
-  CmNetworkPrivate *priv = network->priv;
   GError *error = NULL;
-
-  priv->disconnect_proxy_call = NULL;
 
   if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
   {
@@ -399,21 +391,16 @@ cm_network_disconnect (CmNetwork *network)
 {
   CmNetworkPrivate *priv = network->priv;
   GError *error = NULL;
+  DBusGProxyCall *call;
 
-  if (!priv->connected && !priv->connect_proxy_call)
+  if (!priv->connected)
     return TRUE;
 
-  network_proxy_call_destroy (network, &priv->connect_proxy_call);
+  call = dbus_g_proxy_begin_call (priv->proxy, "Disconnect",
+                                  network_disconnect_call_notify, network,
+                                  NULL, G_TYPE_INVALID);
 
-  if (priv->disconnect_proxy_call)
-    return FALSE;
-
-  priv->disconnect_proxy_call = dbus_g_proxy_begin_call (
-    priv->proxy, "Disconnect",
-    network_disconnect_call_notify, network, NULL,
-    G_TYPE_INVALID);
-
-  if (!priv->disconnect_proxy_call)
+  if (!call)
   {
     g_debug ("Disconnect failed: %s\n", error ? error->message : "Unknown");
     g_error_free (error);
@@ -429,10 +416,7 @@ network_connect_call_notify (DBusGProxy *proxy,
                              gpointer data)
 {
   CmNetwork *network = data;
-  CmNetworkPrivate *priv = network->priv;
   GError *error = NULL;
-
-  priv->connect_proxy_call = NULL;
 
   if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
   {
@@ -447,23 +431,19 @@ cm_network_connect (CmNetwork *network)
 {
   CmNetworkPrivate *priv = network->priv;
   GError *error = NULL;
+  DBusGProxyCall *call;
 
-  if (priv->connected && !priv->disconnect_proxy_call)
+  if (priv->connected)
     return TRUE;
-
-  network_proxy_call_destroy (network, &priv->disconnect_proxy_call);
 
   if (cm_network_is_secure (network) && !cm_network_has_passphrase (network))
     return FALSE;
 
-  if (priv->connect_proxy_call)
-    return FALSE;
+  call = dbus_g_proxy_begin_call (priv->proxy, "Connect",
+                                  network_connect_call_notify, network, NULL,
+                                  G_TYPE_INVALID);
 
-  priv->connect_proxy_call = dbus_g_proxy_begin_call (
-    priv->proxy, "Connect",
-    network_connect_call_notify, network, NULL,
-    G_TYPE_INVALID);
-  if (!priv->connect_proxy_call)
+  if (!call)
   {
     g_debug ("Connect failed: %s\n", error ? error->message : "Unknown");
     g_error_free (error);
@@ -542,8 +522,6 @@ network_set_property_call_notify (DBusGProxy *proxy,
   CmNetworkPrivate *priv = network->priv;
   GError *error = NULL;
 
-  priv->set_property_proxy_call = NULL;
-
   if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
   {
     g_debug ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
@@ -560,30 +538,25 @@ network_set_property_call_notify (DBusGProxy *proxy,
 
   g_free (priv->pending_property_name);
   g_value_unset (&priv->pending_property_value);
-  priv->pending_property_name = NULL;
 }
 
 gboolean
-cm_network_set_property (CmNetwork *network, const gchar *property, GValue *value)
+cm_network_set_property (CmNetwork *network, const gchar *property,
+                         GValue *value)
 {
   CmNetworkPrivate *priv = network->priv;
   GError *error = NULL;
+  DBusGProxyCall *call;
 
-  if (priv->set_property_proxy_call)
-    return FALSE;
-
-  priv->pending_property_name = g_strdup (property);
   g_value_init (&priv->pending_property_value, G_VALUE_TYPE (value));
   g_value_copy (value, &priv->pending_property_value);
 
-  priv->set_property_proxy_call = dbus_g_proxy_begin_call (
-    priv->proxy, "SetProperty",
-    network_set_property_call_notify, network, NULL,
-    G_TYPE_STRING, property,
-    G_TYPE_VALUE, value,
-    G_TYPE_INVALID);
+  call = dbus_g_proxy_begin_call (priv->proxy, "SetProperty",
+                                  network_set_property_call_notify, network,
+                                  NULL, G_TYPE_STRING, property,
+                                  G_TYPE_VALUE, value, G_TYPE_INVALID);
 
-  if (!priv->set_property_proxy_call)
+  if (!call)
   {
     g_debug ("SetProperty failed: %s\n", error ? error->message : "Unknown");
     g_error_free (error);
@@ -650,12 +623,6 @@ network_dispose (GObject *object)
   CmNetwork *network = CM_NETWORK (object);
   CmNetworkPrivate *priv = network->priv;
 
-  if (priv->pending_property_name)
-  {
-    g_free (priv->pending_property_name);
-    g_value_unset (&priv->pending_property_value);
-  }
-
   if (priv->proxy)
   {
     dbus_g_proxy_disconnect_signal (
@@ -663,12 +630,12 @@ network_dispose (GObject *object)
       G_CALLBACK (network_property_change_handler_proxy),
       network);
 
-    network_proxy_call_destroy (network, &priv->get_properties_proxy_call);
-    network_proxy_call_destroy (network, &priv->connect_proxy_call);
-    network_proxy_call_destroy (network, &priv->disconnect_proxy_call);
-    network_proxy_call_destroy (network, &priv->set_property_proxy_call);
-    g_object_unref (priv->proxy);
     priv->proxy = NULL;
+  }
+  if (priv->pending_property_name)
+  {
+    g_free (priv->pending_property_name);
+    g_value_unset (&priv->pending_property_value);
   }
 
   G_OBJECT_CLASS (network_parent_class)->dispose (object);

@@ -58,8 +58,6 @@ struct _CmConnectionPrivate
   gchar *ipv4_method;
   gchar *ipv4_address;
 
-  DBusGProxyCall *get_properties_proxy_call;
-
   GValue pending_property_value;
   gchar *pending_property_name;
 };
@@ -95,22 +93,12 @@ connection_emit_updated (CmConnection *connection)
 }
 
 static void
-connection_proxy_call_destroy (CmConnection *connection, DBusGProxyCall **proxy_call)
-{
-  CmConnectionPrivate *priv = connection->priv;
-  if (*proxy_call == NULL)
-    return;
-  dbus_g_proxy_cancel_call (priv->proxy, *proxy_call);
-  *proxy_call = NULL;
-}
-
-static void
 connection_update_property (const gchar *key, GValue *value, CmConnection *connection)
 {
   CmConnectionPrivate *priv = connection->priv;
   gchar *tmp;
 
-  // FIXME: use intern string
+  // FIXME: use intern strings??
   if (!strcmp ("Interface", key))
   {
     g_free (priv->interface);
@@ -217,7 +205,6 @@ connection_get_properties_call_notify (DBusGProxy *proxy,
 				   gpointer data)
 {
   CmConnection *connection = data;
-  CmConnectionPrivate *priv = connection->priv;
   GError *error = NULL;
   GHashTable *properties = NULL;
 
@@ -236,8 +223,6 @@ connection_get_properties_call_notify (DBusGProxy *proxy,
   g_hash_table_foreach (properties, (GHFunc)connection_update_property, connection);
   g_hash_table_unref (properties);
   connection_emit_updated (connection);
-
-  priv->get_properties_proxy_call = NULL;
 }
 
 CmConnection *
@@ -245,6 +230,7 @@ internal_connection_new (DBusGProxy *proxy, const gchar *path, GError **error)
 {
   CmConnection *connection;
   CmConnectionPrivate *priv;
+  DBusGProxyCall *call;
 
   connection = g_object_new (CM_TYPE_CONNECTION, NULL);
   if (!connection)
@@ -286,11 +272,10 @@ internal_connection_new (DBusGProxy *proxy, const gchar *path, GError **error)
     G_CALLBACK (connection_property_change_handler_proxy),
     connection, NULL);
 
-  priv->get_properties_proxy_call = dbus_g_proxy_begin_call (
-    priv->proxy, "GetProperties",
-    connection_get_properties_call_notify, connection, NULL,
-    G_TYPE_INVALID);
-  if (!priv->get_properties_proxy_call)
+  call = dbus_g_proxy_begin_call (priv->proxy, "GetProperties",
+                                  connection_get_properties_call_notify,
+                                  connection, NULL, G_TYPE_INVALID);
+  if (!call)
   {
     g_set_error (error, CONNECTION_ERROR, CONNECTION_ERROR_CONNMAN_GET_PROPERTIES,
                  "Invocation of GetProperties failed.");
@@ -387,8 +372,6 @@ connection_dispose (GObject *object)
     priv->proxy, "PropertyChanged",
     G_CALLBACK (connection_property_change_handler_proxy),
     connection);
-
-    connection_proxy_call_destroy (connection, &priv->get_properties_proxy_call);
 
     g_object_unref (priv->proxy);
     priv->proxy = NULL;

@@ -66,11 +66,6 @@ struct _CmDevicePrivate
   gchar *address;
   guint scan_interval;
 
-  DBusGProxyCall *get_properties_proxy_call;
-  DBusGProxyCall *propose_scan_proxy_call;
-  DBusGProxyCall *join_network_proxy_call;
-  DBusGProxyCall *set_property_proxy_call;
-
   GValue pending_property_value;
   gchar *pending_property_name;
 };
@@ -95,16 +90,6 @@ static void
 device_emit_updated (CmDevice *device)
 {
   g_signal_emit (device, device_signals[SIGNAL_UPDATE], 0 /* detail */);
-}
-
-static void
-device_proxy_call_destroy (CmDevice *device, DBusGProxyCall **proxy_call)
-{
-  CmDevicePrivate *priv = device->priv;
-  if (*proxy_call == NULL)
-    return;
-  dbus_g_proxy_cancel_call (priv->proxy, *proxy_call);
-  *proxy_call = NULL;
 }
 
 static void
@@ -235,7 +220,6 @@ device_get_properties_call_notify (DBusGProxy *proxy,
 				   gpointer data)
 {
   CmDevice *device = data;
-  CmDevicePrivate *priv = device->priv;
   GError *error = NULL;
   GHashTable *properties = NULL;
 
@@ -254,8 +238,6 @@ device_get_properties_call_notify (DBusGProxy *proxy,
   g_hash_table_foreach (properties, (GHFunc)device_update_property, device);
   g_hash_table_unref (properties);
   device_emit_updated (device);
-
-  priv->get_properties_proxy_call = NULL;
 }
 
 CmDevice *
@@ -263,6 +245,7 @@ internal_device_new (DBusGProxy *proxy, const gchar *path, GError **error)
 {
   CmDevice *device;
   CmDevicePrivate *priv;
+  DBusGProxyCall *call;
 
   device = g_object_new (CM_TYPE_DEVICE, NULL);
   if (!device)
@@ -304,11 +287,10 @@ internal_device_new (DBusGProxy *proxy, const gchar *path, GError **error)
     G_CALLBACK (device_property_change_handler_proxy),
     device, NULL);
 
-  priv->get_properties_proxy_call = dbus_g_proxy_begin_call (
-    priv->proxy, "GetProperties",
-    device_get_properties_call_notify, device, NULL,
-    G_TYPE_INVALID);
-  if (!priv->get_properties_proxy_call)
+  call = dbus_g_proxy_begin_call (priv->proxy, "GetProperties",
+                                  device_get_properties_call_notify, device,
+                                  NULL, G_TYPE_INVALID);
+  if (!call)
   {
     g_set_error (error, DEVICE_ERROR, DEVICE_ERROR_CONNMAN_GET_PROPERTIES,
                  "Invocation of GetProperties failed.");
@@ -353,11 +335,7 @@ device_propose_scan_call_notify (DBusGProxy *proxy,
                                  DBusGProxyCall *call,
                                  gpointer data)
 {
-  CmDevice *device = data;
-  CmDevicePrivate *priv= device->priv;
   GError *error = NULL;
-
-  priv->propose_scan_proxy_call = NULL;
 
   if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
   {
@@ -371,6 +349,8 @@ gboolean
 cm_device_scan (CmDevice *device)
 {
   CmDevicePrivate *priv= device->priv;
+  DBusGProxyCall *call;
+
   switch (priv->type)
   {
   case DEVICE_WIFI:
@@ -384,17 +364,10 @@ cm_device_scan (CmDevice *device)
     return FALSE;
   }
 
-  if (priv->propose_scan_proxy_call)
-  {
-    /* Scan in progress */
-    return FALSE;
-  }
-
-  priv->propose_scan_proxy_call = dbus_g_proxy_begin_call (
-    priv->proxy, "ProposeScan",
-    device_propose_scan_call_notify, device, NULL,
-    G_TYPE_INVALID);
-  if (!priv->propose_scan_proxy_call)
+  call = dbus_g_proxy_begin_call (priv->proxy, "ProposeScan",
+                                  device_propose_scan_call_notify, device,
+                                  NULL, G_TYPE_INVALID);
+  if (!call)
   {
     g_debug ("Net scanning on %s - ProposeScan failed.\n",
 	     cm_device_get_name (device));
@@ -412,8 +385,6 @@ device_set_property_call_notify (DBusGProxy *proxy,
   CmDevice *device = data;
   CmDevicePrivate *priv = device->priv;
   GError *error = NULL;
-
-  priv->set_property_proxy_call = NULL;
 
   if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
   {
@@ -439,22 +410,18 @@ device_set_property (CmDevice *device, const gchar *property, GValue *value)
 {
   CmDevicePrivate *priv = device->priv;
   GError *error = NULL;
-
-  if (priv->set_property_proxy_call)
-    return FALSE;
+  DBusGProxyCall *call;
 
   priv->pending_property_name = g_strdup (property);
   g_value_init (&priv->pending_property_value, G_VALUE_TYPE (value));
   g_value_copy (value, &priv->pending_property_value);
 
-  priv->set_property_proxy_call = dbus_g_proxy_begin_call (
-    priv->proxy, "SetProperty",
-    device_set_property_call_notify, device, NULL,
-    G_TYPE_STRING, property,
-    G_TYPE_VALUE, value,
-    G_TYPE_INVALID);
+  call = dbus_g_proxy_begin_call (priv->proxy, "SetProperty",
+                                  device_set_property_call_notify, device,
+                                  NULL, G_TYPE_STRING, property,
+                                  G_TYPE_VALUE, value, G_TYPE_INVALID);
 
-  if (!priv->set_property_proxy_call)
+  if (!call)
   {
     g_debug ("SetProperty failed: %s\n", error ? error->message : "Unknown");
     g_error_free (error);
@@ -484,10 +451,12 @@ cm_device_set_powered (CmDevice *device, gboolean powered)
 {
   GValue value = { 0 };
   gboolean ret;
+
   g_value_init (&value, G_TYPE_BOOLEAN);
   g_value_set_boolean (&value, powered);
   ret = device_set_property (device, "Powered", &value);
   g_value_unset (&value);
+
   return ret;
 }
 
@@ -530,11 +499,7 @@ static void
 device_join_network_call_notify (DBusGProxy *proxy, DBusGProxyCall *call,
                                  gpointer user_data)
 {
-  CmDevice *device = user_data;
-  CmDevicePrivate *priv = device->priv;
   GError *error = NULL;
-
-  priv->join_network_proxy_call = NULL;
 
   if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
   {
@@ -558,11 +523,7 @@ cm_device_join_network (CmDevice *device, const gchar *ssid,
   CmDevicePrivate *priv = device->priv;
   GHashTable *net_props;
   GValue *mode_val, *network_val, *security_val, *secret_val;
-
-  if (priv->join_network_proxy_call)
-  {
-    return FALSE;
-  }
+  DBusGProxyCall *call;
 
   /* Populate a hashtable/dictionary of network property key-value pairs */
   net_props = g_hash_table_new_full (g_str_hash,
@@ -597,12 +558,14 @@ cm_device_join_network (CmDevice *device, const gchar *ssid,
     g_hash_table_insert (net_props, g_strdup ("WiFi.Passphrase"), secret_val);
   }
 
-  priv->join_network_proxy_call = dbus_g_proxy_begin_call
-    (priv->proxy, "JoinNetwork", device_join_network_call_notify, device, NULL,
-     dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE),
-     net_props, G_TYPE_INVALID);
+  call = dbus_g_proxy_begin_call (priv->proxy, "JoinNetwork", 
+                                  device_join_network_call_notify, device, NULL,
+                                  dbus_g_type_get_map ("GHashTable",
+                                                       G_TYPE_STRING,
+                                                       G_TYPE_VALUE),
+                                  net_props, G_TYPE_INVALID);
 
-  if (!priv->join_network_proxy_call)
+  if (!call)
   {
     g_debug ("Joining network on %s failed.\n",
              cm_device_get_name (device));
@@ -626,6 +589,12 @@ device_dispose (GObject *object)
   CmDevice *device = CM_DEVICE (object);
   CmDevicePrivate *priv = device->priv;
 
+  if (priv->pending_property_name)
+  {
+    g_free (priv->pending_property_name);
+    g_value_unset (&priv->pending_property_value);
+  }
+
   if (priv->proxy)
   {
     dbus_g_proxy_disconnect_signal (
@@ -633,10 +602,6 @@ device_dispose (GObject *object)
       G_CALLBACK (device_property_change_handler_proxy),
       device);
 
-    device_proxy_call_destroy (device, &priv->get_properties_proxy_call);
-    device_proxy_call_destroy (device, &priv->propose_scan_proxy_call);
-    device_proxy_call_destroy (device, &priv->join_network_proxy_call);
-    device_proxy_call_destroy (device, &priv->set_property_proxy_call);
     g_object_unref (priv->proxy);
     priv->proxy = NULL;
   }
