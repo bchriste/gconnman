@@ -272,14 +272,26 @@ network_property_change_handler_proxy (DBusGProxy *proxy,
 
 static void
 network_get_properties_call_notify (DBusGProxy *proxy,
-				   DBusGProxyCall *call,
-				   gpointer data)
+                                    DBusGProxyCall *call,
+                                    gpointer data)
 {
   CmNetwork *network = data;
-  CmNetworkPrivate *priv = network->priv;
   GError *error = NULL;
   GHashTable *properties = NULL;
   gint count;
+
+  if (!dbus_g_proxy_end_call (proxy, call, &error,
+                              /* OUT values */
+                              dbus_g_type_get_map ("GHashTable",
+                                                   G_TYPE_STRING,
+                                                   G_TYPE_VALUE),
+                              &properties, G_TYPE_INVALID))
+  {
+    g_print ("Error calling dbus_g_proxy_end_call in %s on %s: %s\n",
+             __FUNCTION__, cm_network_get_name (network), error->message);
+    g_error_free (error);
+    return;
+  }
 
   count = g_hash_table_size (properties);
 
