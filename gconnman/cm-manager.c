@@ -634,6 +634,10 @@ cm_manager_get_active_service (CmManager *manager)
   if (priv->services)
   {
     active = (CmService *) priv->services->data;
+    if (!cm_service_get_connected (active))
+    {
+      active = NULL;
+    }
   }
   else
   {
