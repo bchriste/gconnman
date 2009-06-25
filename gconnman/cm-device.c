@@ -115,7 +115,7 @@ device_update_property (const gchar *key, GValue *value, CmDevice *device)
 
   if (!strcmp ("Networks", key))
   {
-    GPtrArray *networks = g_value_get_boxed (value);
+    /*GPtrArray *networks = g_value_get_boxed (value);
     gint i;
     const gchar *path;
 
@@ -142,7 +142,7 @@ device_update_property (const gchar *key, GValue *value, CmDevice *device)
       {
 	priv->networks = g_list_append (priv->networks, network);
       }
-    }
+      }*/
   }
   else if (!strcmp ("Scanning", key))
   {

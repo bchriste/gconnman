@@ -343,6 +343,7 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
   else if (!strcmp ("ActiveProfile", key))
   {
     gchar *profile = g_value_get_boxed (value);
+    /* FIXME: Finish this property */
   }
   else if (!strcmp ("OfflineMode", key))
   {
