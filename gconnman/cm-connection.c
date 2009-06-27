@@ -150,34 +150,46 @@ connection_update_property (const gchar *key, GValue *value, CmConnection *conne
     priv->ipv4_address = g_value_dup_string (value);
     g_signal_emit (connection, connection_signals[SIGNAL_IPV4_ADDRESS_CHANGED], 0);
   }
-  /*else if (!strcmp ("Device", key))
+  else if (!strcmp ("Device", key))
   {
-    GError *error = NULL;
     gchar *path = g_value_get_boxed (value);
 
-    priv->device = internal_device_new (priv->proxy, path, &error);
+    priv->device = cm_manager_find_device (priv->manager, path);
+
     if (!priv->device)
     {
-      g_debug ("device_new failed in %s: %s\n", __FUNCTION__, error->message);
-      g_error_free (error);
+      g_debug ("Device not found by manager: %s\n", __FUNCTION__);
     }
-
-    g_signal_emit (connection, connection_signals[SIGNAL_DEVICE_CHANGED], 0);
+    else
+    {
+      g_signal_emit (connection, connection_signals[SIGNAL_DEVICE_CHANGED], 0);
+    }
   }
   else if (!strcmp ("Network", key))
   {
     GError *error = NULL;
     gchar *path = g_value_get_boxed (value);
 
-    priv->network = internal_network_new (priv->proxy, priv->device, path, &error);
-    if (!priv->network)
+    if (priv->network)
     {
-      g_debug ("network_new failed in %s: %s\n", __FUNCTION__, error->message);
-      g_error_free (error);
+      g_object_unref (priv->network);
+      priv->network = NULL;
     }
 
-    g_signal_emit (connection, connection_signals[SIGNAL_NETWORK_CHANGED], 0);
-    }*/
+    priv->network = internal_network_new (priv->proxy, priv->device, path,
+                                          &error);
+
+    if (!priv->network)
+    {
+      g_debug ("network_new failed in %s: %s\n", __FUNCTION__,
+               error->message);
+      g_error_free (error);
+    }
+    else
+    {
+      g_signal_emit (connection, connection_signals[SIGNAL_NETWORK_CHANGED], 0);
+    }
+  }
   else
   {
     tmp = g_strdup_value_contents (value);
@@ -488,7 +500,7 @@ connection_class_init (CmConnectionClass *klass)
     NULL, NULL,
     g_cclosure_marshal_VOID__VOID,
     G_TYPE_NONE, 0);
-  /*connection_signals[SIGNAL_DEVICE_CHANGED] = g_signal_new (
+  connection_signals[SIGNAL_DEVICE_CHANGED] = g_signal_new (
     "device-changed",
     G_TYPE_FROM_CLASS (gobject_class),
     G_SIGNAL_RUN_LAST,
@@ -503,7 +515,7 @@ connection_class_init (CmConnectionClass *klass)
     0,
     NULL, NULL,
     g_cclosure_marshal_VOID__VOID,
-    G_TYPE_NONE, 0);*/
+    G_TYPE_NONE, 0);
 
   g_type_class_add_private (gobject_class, sizeof (CmConnectionPrivate));
 }
