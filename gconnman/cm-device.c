@@ -116,7 +116,8 @@ device_update_property (const gchar *key, GValue *value, CmDevice *device)
       path = g_ptr_array_index (networks, i);
       CmNetwork *network;
       GError *error = NULL;
-      network = internal_network_new (priv->proxy, device, path, &error);
+      network = internal_network_new (priv->proxy, device, path, priv->manager,
+                                      &error);
       if (!network)
       {
         g_debug ("network_new failed in %s: %s\n", __FUNCTION__,

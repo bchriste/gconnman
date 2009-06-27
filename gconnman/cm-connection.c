@@ -177,7 +177,7 @@ connection_update_property (const gchar *key, GValue *value, CmConnection *conne
     }
 
     priv->network = internal_network_new (priv->proxy, priv->device, path,
-                                          &error);
+                                          priv->manager, &error);
 
     if (!priv->network)
     {

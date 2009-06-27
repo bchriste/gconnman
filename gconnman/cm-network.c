@@ -55,6 +55,7 @@ G_DEFINE_TYPE (CmNetwork, network, G_TYPE_OBJECT);
 struct _CmNetworkPrivate
 {
   CmDevice *device;
+  CmManager *manager;
   gchar *path;
   DBusGProxy *proxy;
   guchar *ssid;
@@ -230,6 +231,11 @@ network_update_property (const gchar *key, GValue *value, CmNetwork *network)
     priv->frequency = g_value_get_uint (value);
     priv->flags |= NETWORK_INFO_FREQUENCY;
   }
+  else if (!strcmp ("Device", key))
+  {
+    gchar *path = g_value_get_boxed (value);
+    priv->device = cm_manager_find_device (priv->manager, path);
+  }
   else
   {
     tmp = g_strdup_value_contents (value);
@@ -295,7 +301,8 @@ network_get_properties_call_notify (DBusGProxy *proxy,
 
 CmNetwork *
 internal_network_new (DBusGProxy *proxy,
-	     CmDevice *device, const gchar *path, GError **error)
+                      CmDevice *device, const gchar *path,
+                      CmManager *manager, GError **error)
 {
   CmNetwork *network;
   CmNetworkPrivate *priv;
@@ -311,6 +318,7 @@ internal_network_new (DBusGProxy *proxy,
 
   priv = network->priv;
   priv->device = device;
+  priv->manager = manager;
 
   priv->path = g_strdup (path);
   if (!priv->path)
@@ -638,6 +646,8 @@ network_dispose (GObject *object)
     g_value_unset (&priv->pending_property_value);
   }
 
+  priv->manager = NULL;
+
   G_OBJECT_CLASS (network_parent_class)->dispose (object);
 }
 
@@ -673,6 +683,7 @@ network_init (CmNetwork *self)
   self->priv->address = NULL;
   self->priv->channel = 0;
   self->priv->frequency = 0;
+  self->priv->manager = NULL;
 }
 
 static void
