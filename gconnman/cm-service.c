@@ -661,6 +661,23 @@ cm_service_get_path (CmService *service)
   return priv->path;
 }
 
+gboolean
+cm_service_make_default (CmService *service)
+{
+  CmServicePrivate *priv = service->priv;
+  gboolean ret = FALSE;
+  const GList *services = cm_manager_get_services (priv->manager);
+  CmService *first = services->data;
+
+  if (!priv->connected)
+    ret = cm_service_connect (service);
+
+  if (ret)
+    ret = cm_service_move_before (service, first);
+
+  return ret;
+}
+
 /*****************************************************************************
  *
  *
