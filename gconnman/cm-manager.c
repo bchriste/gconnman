@@ -185,7 +185,7 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
       device = cm_manager_find_device (manager, path);
       if (!device)
       {
-        device = internal_device_new (priv->proxy, path, &error);
+        device = internal_device_new (priv->proxy, path, manager, &error);
         if (!device)
         {
           g_debug ("device_new failed in %s: %s\n", __FUNCTION__,
@@ -242,7 +242,8 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
       connection = cm_manager_find_connection (manager, path);
       if (!connection)
       {
-        connection = internal_connection_new (priv->proxy, path, &error);
+        connection = internal_connection_new (priv->proxy, path, manager,
+                                              &error);
         if (!connection)
         {
           g_debug ("connection_new failed in %s: %s\n", __FUNCTION__,
@@ -299,7 +300,7 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
       service = cm_manager_find_service (manager, path);
       if (!service)
       {
-        service = internal_service_new (priv->proxy, path, i, &error);
+        service = internal_service_new (priv->proxy, path, i, manager, &error);
         if (!service)
         {
           g_debug ("service_new failed in %s: %s\n", __FUNCTION__,

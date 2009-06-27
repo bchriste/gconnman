@@ -45,6 +45,7 @@ G_DEFINE_TYPE (CmConnection, connection, G_TYPE_OBJECT);
 
 struct _CmConnectionPrivate
 {
+  CmManager *manager;
   gchar *path;
   CmConnectionType type;
   DBusGProxy *proxy;
@@ -226,7 +227,7 @@ connection_get_properties_call_notify (DBusGProxy *proxy,
 }
 
 CmConnection *
-internal_connection_new (DBusGProxy *proxy, const gchar *path, GError **error)
+internal_connection_new (DBusGProxy *proxy, const gchar *path, CmManager *manager, GError **error)
 {
   CmConnection *connection;
   CmConnectionPrivate *priv;
@@ -242,6 +243,7 @@ internal_connection_new (DBusGProxy *proxy, const gchar *path, GError **error)
 
   priv = connection->priv;
   priv->type = CONNECTION_UNKNOWN;
+  priv->manager = manager;
 
   priv->path = g_strdup (path);
   if (!priv->path)
@@ -389,6 +391,8 @@ connection_dispose (GObject *object)
     priv->device = NULL;
   }
 
+  priv->manager = NULL;
+
   G_OBJECT_CLASS (connection_parent_class)->finalize (object);
 }
 
@@ -417,6 +421,7 @@ connection_init (CmConnection *self)
   self->priv->network = NULL;
   self->priv->ipv4_method = NULL;
   self->priv->ipv4_address = NULL;
+  self->priv->manager = NULL;
 }
 
 static void

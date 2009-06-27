@@ -49,6 +49,7 @@ G_DEFINE_TYPE (CmDevice, device, G_TYPE_OBJECT);
 
 struct _CmDevicePrivate
 {
+  CmManager *manager;
   gchar *path;
   CmDeviceType type;
   DBusGProxy *proxy;
@@ -241,7 +242,8 @@ device_get_properties_call_notify (DBusGProxy *proxy,
 }
 
 CmDevice *
-internal_device_new (DBusGProxy *proxy, const gchar *path, GError **error)
+internal_device_new (DBusGProxy *proxy, const gchar *path, CmManager *manager,
+                     GError **error)
 {
   CmDevice *device;
   CmDevicePrivate *priv;
@@ -256,6 +258,7 @@ internal_device_new (DBusGProxy *proxy, const gchar *path, GError **error)
   }
 
   priv = device->priv;
+  priv->manager = manager;
   priv->type = DEVICE_UNKNOWN;
 
   priv->path = g_strdup (path);
@@ -611,6 +614,8 @@ device_dispose (GObject *object)
     g_object_unref (priv->networks->data);
     priv->networks = g_list_delete_link (priv->networks, priv->networks);
   }
+
+  priv->manager = NULL;
 
   G_OBJECT_CLASS (device_parent_class)->dispose (object);
 }

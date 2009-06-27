@@ -35,6 +35,8 @@ G_DEFINE_TYPE (CmService, service, G_TYPE_OBJECT);
 
 struct _CmServicePrivate
 {
+  CmManager *manager;
+
   DBusGProxy *proxy;
   gchar *path;
 
@@ -217,7 +219,7 @@ service_get_properties_call_notify (DBusGProxy *proxy,
 
 CmService *
 internal_service_new (DBusGProxy *proxy, const gchar *path, int order,
-                      GError **error)
+                      CmManager *manager, GError **error)
 {
   CmService *service;
   CmServicePrivate *priv;
@@ -232,6 +234,7 @@ internal_service_new (DBusGProxy *proxy, const gchar *path, int order,
   }
 
   priv = service->priv;
+  priv->manager = manager;
 
   priv->path = g_strdup (path);
   if (!priv->path)
@@ -689,6 +692,8 @@ service_dispose (GObject *object)
     priv->proxy = NULL;
   }
 
+  priv->manager = NULL;
+
   G_OBJECT_CLASS (service_parent_class)->dispose (object);
 }
 
@@ -713,6 +718,7 @@ static void
 service_init (CmService *self)
 {
   self->priv = CM_SERVICE_GET_PRIVATE (self);
+  self->priv->manager = NULL;
   self->priv->path = NULL;
   self->priv->state = NULL;
   self->priv->name = NULL;
