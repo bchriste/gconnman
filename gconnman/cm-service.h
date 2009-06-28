@@ -78,6 +78,7 @@ typedef enum
   SERVICE_INFO_PASSPHRASE = 1 << 5,
   SERVICE_INFO_STRENGTH   = 1 << 6,
   SERVICE_INFO_FAVORITE   = 1 << 7,
+  SERVICE_INFO_ERROR      = 1 << 8,
 } CmServiceInfoMask;
 
 /* methods */
@@ -101,6 +102,7 @@ guint cm_service_get_strength (CmService *service);
 gboolean cm_service_get_favorite (CmService *service);
 gboolean cm_service_get_connected (CmService *service);
 gint cm_service_get_order (CmService *service);
+const gchar *cm_service_get_error (CmService *service);
 
 gboolean cm_service_set_passphrase (CmService *service, const char* passphrase);
 void cm_service_set_order (CmService *service, gint order);
