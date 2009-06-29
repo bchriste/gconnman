@@ -66,9 +66,6 @@ struct _CmDevicePrivate
   gchar *ipv4_method;
   gchar *address;
   guint scan_interval;
-
-  GValue pending_property_value;
-  gchar *pending_property_name;
 };
 
 static void device_property_change_handler_proxy (DBusGProxy *, const gchar *,
@@ -396,17 +393,6 @@ device_set_property_call_notify (DBusGProxy *proxy,
              __FUNCTION__, cm_device_get_name (device), error->message);
     g_error_free (error);
   }
-  else
-  {
-    device_update_property (priv->pending_property_name,
-                            &priv->pending_property_value,
-                            device);
-    device_emit_updated (device);
-  }
-
-  g_free (priv->pending_property_name);
-  g_value_unset (&priv->pending_property_value);
-  priv->pending_property_name = NULL;
 }
 
 gboolean
@@ -415,10 +401,6 @@ device_set_property (CmDevice *device, const gchar *property, GValue *value)
   CmDevicePrivate *priv = device->priv;
   GError *error = NULL;
   DBusGProxyCall *call;
-
-  priv->pending_property_name = g_strdup (property);
-  g_value_init (&priv->pending_property_value, G_VALUE_TYPE (value));
-  g_value_copy (value, &priv->pending_property_value);
 
   call = dbus_g_proxy_begin_call (priv->proxy, "SetProperty",
                                   device_set_property_call_notify, device,
@@ -593,10 +575,10 @@ device_dispose (GObject *object)
   CmDevice *device = CM_DEVICE (object);
   CmDevicePrivate *priv = device->priv;
 
-  if (priv->pending_property_name)
+  while (priv->networks)
   {
-    g_free (priv->pending_property_name);
-    g_value_unset (&priv->pending_property_value);
+    g_object_unref (priv->networks->data);
+    priv->networks = g_list_delete_link (priv->networks, priv->networks);
   }
 
   if (priv->proxy)
@@ -608,12 +590,6 @@ device_dispose (GObject *object)
 
     g_object_unref (priv->proxy);
     priv->proxy = NULL;
-  }
-
-  while (priv->networks)
-  {
-    g_object_unref (priv->networks->data);
-    priv->networks = g_list_delete_link (priv->networks, priv->networks);
   }
 
   priv->manager = NULL;

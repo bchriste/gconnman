@@ -58,9 +58,6 @@ struct _CmConnectionPrivate
   CmNetwork *network;
   gchar *ipv4_method;
   gchar *ipv4_address;
-
-  GValue pending_property_value;
-  gchar *pending_property_name;
 };
 
 static void connection_property_change_handler_proxy (DBusGProxy *, const gchar *,

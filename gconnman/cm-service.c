@@ -55,9 +55,6 @@ struct _CmServicePrivate
   CmServiceInfoMask flags;
 
   gulong last_update;
-
-  GValue pending_property_value;
-  gchar *pending_property_name;
 };
 
 enum
@@ -417,7 +414,6 @@ service_set_property_call_notify (DBusGProxy *proxy,
 				  gpointer data)
 {
   CmService *service = data;
-  CmServicePrivate *priv = service->priv;
   GError *error = NULL;
 
   if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
@@ -426,17 +422,6 @@ service_set_property_call_notify (DBusGProxy *proxy,
              __FUNCTION__, cm_service_get_name (service), error->message);
     g_error_free (error);
   }
-  else
-  {
-    service_update_property (priv->pending_property_name,
-                             &priv->pending_property_value,
-                             service);
-    service_emit_updated (service);
-  }
-
-  g_free (priv->pending_property_name);
-  g_value_unset (&priv->pending_property_value);
-  priv->pending_property_name = NULL;
 }
 
 gboolean
@@ -446,10 +431,6 @@ cm_service_set_property (CmService *service, const gchar *property,
   CmServicePrivate *priv = service->priv;
   GError *error = NULL;
   DBusGProxyCall *call;
-
-  priv->pending_property_name = g_strdup (property);
-  g_value_init (&priv->pending_property_value, G_VALUE_TYPE (value));
-  g_value_copy (value, &priv->pending_property_value);
 
   call = dbus_g_proxy_begin_call (priv->proxy, "SetProperty",
                                   service_set_property_call_notify, service,
@@ -708,12 +689,6 @@ service_dispose (GObject *object)
 {
   CmService *service = CM_SERVICE (object);
   CmServicePrivate *priv = service->priv;
-
-  if (priv->pending_property_name)
-  {
-    g_free (priv->pending_property_name);
-    g_value_unset (&priv->pending_property_value);
-  }
 
   if (priv->proxy)
   {

@@ -73,9 +73,6 @@ struct _CmNetworkPrivate
   uint channel;
   CmNetworkInfoMask flags;
   time_t last_update;
-
-  GValue pending_property_value;
-  gchar *pending_property_name;
 };
 
 enum
@@ -245,17 +242,6 @@ network_update_property (const gchar *key, GValue *value, CmNetwork *network)
   }
   network_emit_updated (network);
 }
-
-static void
-network_proxy_call_destroy (CmNetwork *network, DBusGProxyCall **proxy_call)
-{
-  CmNetworkPrivate *priv = network->priv;
-  if (*proxy_call == NULL)
-    return;
-  dbus_g_proxy_cancel_call (priv->proxy, *proxy_call);
-  *proxy_call = NULL;
-}
-
 
 static void
 network_property_change_handler_proxy (DBusGProxy *proxy,
@@ -527,7 +513,6 @@ network_set_property_call_notify (DBusGProxy *proxy,
 				  gpointer data)
 {
   CmNetwork *network = data;
-  CmNetworkPrivate *priv = network->priv;
   GError *error = NULL;
 
   if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
@@ -536,16 +521,6 @@ network_set_property_call_notify (DBusGProxy *proxy,
              __FUNCTION__, cm_network_get_name (network), error->message);
     g_error_free (error);
   }
-  else
-  {
-    network_update_property (priv->pending_property_name,
-                             &priv->pending_property_value,
-                             network);
-    network_emit_updated (network);
-  }
-
-  g_free (priv->pending_property_name);
-  g_value_unset (&priv->pending_property_value);
 }
 
 gboolean
@@ -555,9 +530,6 @@ cm_network_set_property (CmNetwork *network, const gchar *property,
   CmNetworkPrivate *priv = network->priv;
   GError *error = NULL;
   DBusGProxyCall *call;
-
-  g_value_init (&priv->pending_property_value, G_VALUE_TYPE (value));
-  g_value_copy (value, &priv->pending_property_value);
 
   call = dbus_g_proxy_begin_call (priv->proxy, "SetProperty",
                                   network_set_property_call_notify, network,
@@ -639,11 +611,6 @@ network_dispose (GObject *object)
       network);
 
     priv->proxy = NULL;
-  }
-  if (priv->pending_property_name)
-  {
-    g_free (priv->pending_property_name);
-    g_value_unset (&priv->pending_property_value);
   }
 
   priv->manager = NULL;

@@ -46,9 +46,6 @@ struct _CmManagerPrivate
   GList *connections;
   gchar *state;
   gchar *policy;
-
-  GValue pending_property_value;
-  gchar *pending_property_name;
 };
 
 static void manager_property_change_handler_proxy (DBusGProxy *, const gchar *,
@@ -510,8 +507,6 @@ manager_set_property_call_notify (DBusGProxy *proxy,
                                  DBusGProxyCall *call,
                                  gpointer data)
 {
-  CmManager *manager = data;
-  CmManagerPrivate *priv = manager->priv;
   GError *error = NULL;
 
   if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
@@ -520,17 +515,6 @@ manager_set_property_call_notify (DBusGProxy *proxy,
              __FUNCTION__, error->message);
     g_error_free (error);
   }
-  else
-  {
-    manager_update_property (priv->pending_property_name,
-                             &priv->pending_property_value,
-                             manager);
-    manager_emit_updated (manager);
-  }
-
-  g_free (priv->pending_property_name);
-  g_value_unset (&priv->pending_property_value);
-  priv->pending_property_name = NULL;
 }
 
 gboolean
@@ -540,12 +524,8 @@ manager_set_property (CmManager *manager, const gchar *property, GValue *value)
   GError *error = NULL;
   DBusGProxyCall *call;
 
-  priv->pending_property_name = g_strdup (property);
-  g_value_init (&priv->pending_property_value, G_VALUE_TYPE (value));
-  g_value_copy (value, &priv->pending_property_value);
-
   call = dbus_g_proxy_begin_call (priv->proxy, "SetProperty",
-                                  manager_set_property_call_notify, manager,
+                                  manager_set_property_call_notify, NULL,
                                   NULL, G_TYPE_STRING, property, G_TYPE_VALUE,
                                   value, G_TYPE_INVALID);
 
@@ -735,7 +715,6 @@ manager_finalize (GObject *object)
 
   g_free (priv->state);
   g_free (priv->policy);
-  g_free (priv->pending_property_name);
 
   G_OBJECT_CLASS (manager_parent_class)->finalize (object);
 }
@@ -747,7 +726,6 @@ manager_init (CmManager *self)
   self->priv->state = NULL;
   self->priv->policy = NULL;
   self->priv->offline_mode = FALSE;
-  self->priv->pending_property_name = NULL;
   self->priv->services = NULL;
   self->priv->devices = NULL;
   self->priv->connections = NULL;
