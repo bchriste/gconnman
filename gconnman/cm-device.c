@@ -60,7 +60,6 @@ struct _CmDevicePrivate
   gchar *name;
   gchar *iface;
 
-  guchar priority;
   gchar *policy;
   gboolean powered;
   gchar *ipv4_method;
@@ -162,10 +161,6 @@ device_update_property (const gchar *key, GValue *value, CmDevice *device)
                cm_device_get_name (device), type);
       priv->type = DEVICE_UNKNOWN;
     }
-  }
-  else if (!strcmp ("Priority", key))
-  {
-    priv->priority = g_value_get_uchar (value);
   }
   else if (!strcmp ("Policy", key))
   {
