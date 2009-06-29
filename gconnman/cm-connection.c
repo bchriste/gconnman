@@ -58,6 +58,10 @@ struct _CmConnectionPrivate
   CmNetwork *network;
   gchar *ipv4_method;
   gchar *ipv4_address;
+  gchar *ipv4_gateway;
+  gchar *ipv4_broadcast;
+  gchar *ipv4_nameserver;
+  gchar *ipv4_netmask;
 };
 
 static void connection_property_change_handler_proxy (DBusGProxy *, const gchar *,
@@ -71,6 +75,10 @@ enum
   SIGNAL_TYPE_CHANGED,
   SIGNAL_IPV4_METHOD_CHANGED,
   SIGNAL_IPV4_ADDRESS_CHANGED,
+  SIGNAL_IPV4_GATEWAY_CHANGED,
+  SIGNAL_IPV4_BROADCAST_CHANGED,
+  SIGNAL_IPV4_NAMESERVER_CHANGED,
+  SIGNAL_IPV4_NETMASK_CHANGED,
   SIGNAL_DEVICE_CHANGED,
   SIGNAL_NETWORK_CHANGED,
   SIGNAL_LAST
@@ -147,6 +155,31 @@ connection_update_property (const gchar *key, GValue *value, CmConnection *conne
     priv->ipv4_address = g_value_dup_string (value);
     g_signal_emit (connection, connection_signals[SIGNAL_IPV4_ADDRESS_CHANGED], 0);
   }
+  else if (!strcmp ("IPv4.Gateway", key))
+  {
+    g_free (priv->ipv4_gateway);
+    priv->ipv4_gateway = g_value_dup_string (value);
+    g_signal_emit (connection, connection_signals[SIGNAL_IPV4_GATEWAY_CHANGED], 0);
+
+  }
+  else if (!strcmp ("IPv4.Broadcast", key))
+  {
+    g_free (priv->ipv4_broadcast);
+    priv->ipv4_broadcast = g_value_dup_string (value);
+    g_signal_emit (connection, connection_signals[SIGNAL_IPV4_BROADCAST_CHANGED], 0);
+  }
+  else if (!strcmp ("IPv4.Nameserver", key))
+  {
+    g_free (priv->ipv4_nameserver);
+    priv->ipv4_nameserver = g_value_dup_string (value);
+    g_signal_emit (connection, connection_signals[SIGNAL_IPV4_NAMESERVER_CHANGED], 0);
+  }
+  else if (!strcmp ("IPv4.Netmask", key))
+  {
+    g_free (priv->ipv4_netmask);
+    priv->ipv4_netmask = g_value_dup_string (value);
+    g_signal_emit (connection, connection_signals[SIGNAL_IPV4_NETMASK_CHANGED], 0);
+  }
   else if (!strcmp ("Device", key))
   {
     gchar *path = g_value_get_boxed (value);
@@ -155,7 +188,7 @@ connection_update_property (const gchar *key, GValue *value, CmConnection *conne
 
     if (!priv->device)
     {
-      g_debug ("Device not found by manager: %s\n", __FUNCTION__);
+      g_debug ("Device not found by manager %s: %s\n", path, __FUNCTION__);
     }
     else
     {
@@ -342,25 +375,57 @@ cm_connection_get_type (const CmConnection *connection)
 CmDevice *
 cm_connection_get_device (CmConnection *connection)
 {
-  return connection->priv->device;
+  CmConnectionPrivate *priv = connection->priv;
+  return priv->device;
 }
 
 CmNetwork *
 cm_connection_get_network (CmConnection *connection)
 {
-  return connection->priv->network;
+  CmConnectionPrivate *priv = connection->priv;
+  return priv->network;
 }
 
 gchar *
 cm_connection_get_ipv4_method (CmConnection *connection)
 {
-  return connection->priv->ipv4_method;
+  CmConnectionPrivate *priv = connection->priv;
+  return priv->ipv4_method;
 }
 
 gchar *
 cm_connection_get_ipv4_address (CmConnection *connection)
 {
-  return connection->priv->ipv4_address;
+  CmConnectionPrivate *priv = connection->priv;
+  return priv->ipv4_address;
+}
+
+gchar *
+cm_connection_get_ipv4_gateway (CmConnection *connection)
+{
+  CmConnectionPrivate *priv = connection->priv;
+  return priv->ipv4_gateway;
+}
+
+gchar *
+cm_connection_get_ipv4_broadcast (CmConnection *connection)
+{
+  CmConnectionPrivate *priv = connection->priv;
+  return priv->ipv4_broadcast;
+}
+
+gchar *
+cm_connection_get_ipv4_nameserver (CmConnection *connection)
+{
+  CmConnectionPrivate *priv = connection->priv;
+  return priv->ipv4_nameserver;
+}
+
+gchar *
+cm_connection_get_ipv4_netmask (CmConnection *connection)
+{
+  CmConnectionPrivate *priv = connection->priv;
+  return priv->ipv4_netmask;
 }
 
 /*****************************************************************************
@@ -414,6 +479,10 @@ connection_finalize (GObject *object)
   g_free (priv->interface);
   g_free (priv->ipv4_method);
   g_free (priv->ipv4_address);
+  g_free (priv->ipv4_gateway);
+  g_free (priv->ipv4_broadcast);
+  g_free (priv->ipv4_nameserver);
+  g_free (priv->ipv4_netmask);
 
   G_OBJECT_CLASS (connection_parent_class)->finalize (object);
 }
@@ -430,6 +499,10 @@ connection_init (CmConnection *self)
   self->priv->network = NULL;
   self->priv->ipv4_method = NULL;
   self->priv->ipv4_address = NULL;
+  self->priv->ipv4_gateway = NULL;
+  self->priv->ipv4_broadcast = NULL;
+  self->priv->ipv4_nameserver = NULL;
+  self->priv->ipv4_netmask = NULL;
   self->priv->manager = NULL;
 }
 
@@ -491,6 +564,38 @@ connection_class_init (CmConnectionClass *klass)
     G_TYPE_NONE, 0);
   connection_signals[SIGNAL_IPV4_ADDRESS_CHANGED] = g_signal_new (
     "ipv4-address-changed",
+    G_TYPE_FROM_CLASS (gobject_class),
+    G_SIGNAL_RUN_LAST,
+    0,
+    NULL, NULL,
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
+  connection_signals[SIGNAL_IPV4_GATEWAY_CHANGED] = g_signal_new (
+    "ipv4-gateway-changed",
+    G_TYPE_FROM_CLASS (gobject_class),
+    G_SIGNAL_RUN_LAST,
+    0,
+    NULL, NULL,
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
+  connection_signals[SIGNAL_IPV4_BROADCAST_CHANGED] = g_signal_new (
+    "ipv4-broadcast-changed",
+    G_TYPE_FROM_CLASS (gobject_class),
+    G_SIGNAL_RUN_LAST,
+    0,
+    NULL, NULL,
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
+  connection_signals[SIGNAL_IPV4_NAMESERVER_CHANGED] = g_signal_new (
+    "ipv4-nameserver-changed",
+    G_TYPE_FROM_CLASS (gobject_class),
+    G_SIGNAL_RUN_LAST,
+    0,
+    NULL, NULL,
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
+  connection_signals[SIGNAL_IPV4_NETMASK_CHANGED] = g_signal_new (
+    "ipv4-netmask-changed",
     G_TYPE_FROM_CLASS (gobject_class),
     G_SIGNAL_RUN_LAST,
     0,

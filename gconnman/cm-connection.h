@@ -93,6 +93,10 @@ CmDevice *cm_connection_get_device (CmConnection *connection);
 CmNetwork *cm_connection_get_network (CmConnection *connection);
 gchar *cm_connection_get_ipv4_method (CmConnection *connection);
 gchar *cm_connection_get_ipv4_address (CmConnection *connection);
+gchar *cm_connection_get_ipv4_gateway (CmConnection *connection);
+gchar *cm_connection_get_ipv4_broadcast (CmConnection *connection);
+gchar *cm_connection_get_ipv4_nameserver (CmConnection *connection);
+gchar *cm_connection_get_ipv4_netmask (CmConnection *connection);
 
 G_END_DECLS
 
