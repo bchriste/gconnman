@@ -190,7 +190,7 @@ connection_update_property (const gchar *key, GValue *value, CmConnection *conne
   else
   {
     tmp = g_strdup_value_contents (value);
-    g_debug ("Unhandled property on %s: %s = %s\n",
+    g_debug ("Unhandled Connection property on %s: %s = %s\n",
              cm_connection_get_interface (connection), key, tmp);
     g_free (tmp);
   }

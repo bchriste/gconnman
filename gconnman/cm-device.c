@@ -193,7 +193,7 @@ device_update_property (const gchar *key, GValue *value, CmDevice *device)
   else
   {
     tmp = g_strdup_value_contents (value);
-    g_debug ("Unhandled property on %s: %s = %s\n",
+    g_debug ("Unhandled Device property on %s: %s = %s\n",
              cm_device_get_name (device), key, tmp);
     g_free (tmp);
   }

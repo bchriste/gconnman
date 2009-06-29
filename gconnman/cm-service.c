@@ -176,7 +176,7 @@ service_update_property (const gchar *key, GValue *value, CmService *service)
   else
   {
     tmp = g_strdup_value_contents (value);
-    g_debug ("Unhandled property on %s: %s = %s\n",
+    g_debug ("Unhandled Service property on %s: %s = %s\n",
              cm_service_get_name (service), key, tmp);
     g_free (tmp);
   }

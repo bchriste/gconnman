@@ -350,7 +350,7 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
   else
   {
     tmp = g_strdup_value_contents (value);
-    g_debug ("Unhandled property on Manager: %s = %s\n",
+    g_debug ("Unhandled Manager property on Manager: %s = %s\n",
              key, tmp);
     g_free (tmp);
   }

@@ -236,7 +236,7 @@ network_update_property (const gchar *key, GValue *value, CmNetwork *network)
   else
   {
     tmp = g_strdup_value_contents (value);
-    g_debug ("Unhandled property on %s: %s = %s\n",
+    g_debug ("Unhandled Network property on %s: %s = %s\n",
              cm_network_get_name (network), key, tmp);
     g_free (tmp);
   }
