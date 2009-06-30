@@ -60,7 +60,6 @@ struct _CmDevicePrivate
   gchar *name;
   gchar *iface;
 
-  gchar *policy;
   gboolean powered;
   gchar *ipv4_method;
   gchar *address;
@@ -161,11 +160,6 @@ device_update_property (const gchar *key, GValue *value, CmDevice *device)
                cm_device_get_name (device), type);
       priv->type = DEVICE_UNKNOWN;
     }
-  }
-  else if (!strcmp ("Policy", key))
-  {
-    g_free (priv->policy);
-    priv->policy = g_value_dup_string (value);
   }
   else if (!strcmp ("Powered", key))
   {
@@ -379,7 +373,6 @@ device_set_property_call_notify (DBusGProxy *proxy,
                                  gpointer data)
 {
   CmDevice *device = data;
-  CmDevicePrivate *priv = device->priv;
   GError *error = NULL;
 
   if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
@@ -599,7 +592,6 @@ device_finalize (GObject *object)
   CmDevicePrivate *priv = device->priv;
 
   g_free (priv->path);
-  g_free (priv->policy);
   g_free (priv->ipv4_method);
   g_free (priv->address);
   g_free (priv->iface);
@@ -613,7 +605,6 @@ device_init (CmDevice *self)
 {
   self->priv = CM_DEVICE_GET_PRIVATE (self);
   self->priv->path = NULL;
-  self->priv->policy = NULL;
   self->priv->ipv4_method = NULL;
   self->priv->address = NULL;
   self->priv->iface = NULL;
