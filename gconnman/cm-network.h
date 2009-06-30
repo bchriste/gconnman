@@ -90,6 +90,7 @@ gboolean cm_network_disconnect (CmNetwork *network);
 /* const getters */
 gboolean cm_network_is_same (const CmNetwork *network, const gchar *path);
 const gchar *cm_network_get_name (const CmNetwork *network);
+const gchar *cm_network_get_path (CmNetwork *network);
 gboolean cm_network_is_connected (const CmNetwork *network);
 gboolean cm_network_is_secure (const CmNetwork *network);
 gulong cm_network_get_timestamp (const CmNetwork *network);

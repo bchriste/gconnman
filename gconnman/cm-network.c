@@ -612,6 +612,13 @@ cm_network_get_address (CmNetwork *network)
   return priv->mode;
 }
 
+const gchar *
+cm_network_get_path (CmNetwork *network)
+{
+  CmNetworkPrivate *priv = network->priv;
+  return priv->path;
+}
+
 
 /*****************************************************************************
  *
