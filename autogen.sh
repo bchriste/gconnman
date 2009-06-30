@@ -4,7 +4,7 @@
 libtoolize --automake
 #gtkdocize || exit 1
 aclocal
-autoconf
+autoreconf
 autoheader
 automake -a
 ./configure $@

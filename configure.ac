@@ -1,8 +1,6 @@
 AC_PREREQ(2.61)
 
 # package version number (not shared library version)
-# odd micro numbers indicate in-progress development
-# even micro numbers indicate released versions
 m4_define(gconnman_version_major, 0)
 m4_define(gconnman_version_minor, 1)
 m4_define(gconnman_version_micro, 17)
@@ -14,6 +12,7 @@ m4_define([gconnman_api_version],
 
 AC_INIT(gconnman, gconnman_version)
 AM_INIT_AUTOMAKE(gconnman, gconnman_version)
+AC_CONFIG_MACRO_DIR([build/autotools])
 AC_CONFIG_HEADERS(config.h)
 
 AC_PROG_LIBTOOL
@@ -51,7 +50,13 @@ AM_CONDITIONAL([SAMPLE], [test "x$sample" = "xyes"])
 # Make it for everyone instead:
 #AM_COND_IF([SAMPLE], [AC_CONFIG_FILES([sample/Makefile])])
 
+SHAVE_INIT([build/autotools], [enable])
+
 AC_OUTPUT([Makefile
+          build/Makefile
+          build/autotools/Makefile
+          build/autotools/shave
+          build/autotools/shave-libtool
           gconnman/Makefile
           gconnman/gconnman.pc
 	  sample/Makefile
