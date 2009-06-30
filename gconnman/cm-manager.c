@@ -45,7 +45,6 @@ struct _CmManagerPrivate
   GList *services;
   GList *connections;
   gchar *state;
-  gchar *policy;
 };
 
 static void manager_property_change_handler_proxy (DBusGProxy *, const gchar *,
@@ -58,7 +57,6 @@ enum
   SIGNAL_DEVICES_CHANGED,
   SIGNAL_SERVICES_CHANGED,
   SIGNAL_CONNECTIONS_CHANGED,
-  SIGNAL_POLICY_CHANGED,
   SIGNAL_LAST
 };
 
@@ -340,12 +338,6 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
     g_free (priv->state);
     priv->state = g_value_dup_string (value);
     g_signal_emit (manager, manager_signals[SIGNAL_STATE_CHANGED], 0);
-  }
-  else if (!strcmp ("Policy", key))
-  {
-    g_free (priv->policy);
-    priv->policy = g_value_dup_string (value);
-    g_signal_emit (manager, manager_signals[SIGNAL_POLICY_CHANGED], 0);
   }
   else
   {
@@ -637,27 +629,6 @@ cm_manager_get_state (CmManager *manager)
   return priv->state;
 }
 
-const gchar *
-cm_manager_get_policy (CmManager *manager)
-{
-  CmManagerPrivate *priv = manager->priv;
-  return priv->policy;
-}
-
-gboolean
-cm_manager_set_policy (CmManager *manager, gchar *policy)
-{
-  GValue value = { 0 };
-  gboolean ret;
-
-  g_value_init (&value, G_TYPE_STRING);
-  g_value_set_string (&value, policy);
-  ret = manager_set_property (manager, "Policy", &value);
-  g_value_unset (&value);
-
-  return ret;
-}
-
 /*****************************************************************************
  *
  *
@@ -714,7 +685,6 @@ manager_finalize (GObject *object)
   CmManagerPrivate *priv = manager->priv;
 
   g_free (priv->state);
-  g_free (priv->policy);
 
   G_OBJECT_CLASS (manager_parent_class)->finalize (object);
 }
@@ -724,7 +694,6 @@ manager_init (CmManager *self)
 {
   self->priv = CM_MANAGER_GET_PRIVATE (self);
   self->priv->state = NULL;
-  self->priv->policy = NULL;
   self->priv->offline_mode = FALSE;
   self->priv->services = NULL;
   self->priv->devices = NULL;
@@ -781,14 +750,6 @@ manager_class_init (CmManagerClass *klass)
     G_TYPE_NONE, 0);
   manager_signals[SIGNAL_SERVICES_CHANGED] = g_signal_new (
     "services-changed",
-    G_TYPE_FROM_CLASS (gobject_class),
-    G_SIGNAL_RUN_LAST,
-    0,
-    NULL, NULL,
-    g_cclosure_marshal_VOID__VOID,
-    G_TYPE_NONE, 0);
-  manager_signals[SIGNAL_POLICY_CHANGED] = g_signal_new (
-    "policy-changed",
     G_TYPE_FROM_CLASS (gobject_class),
     G_SIGNAL_RUN_LAST,
     0,
