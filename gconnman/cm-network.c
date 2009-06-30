@@ -78,6 +78,18 @@ struct _CmNetworkPrivate
 enum
 {
   SIGNAL_UPDATE,
+  SIGNAL_ADDRESS_CHANGED,
+  SIGNAL_NAME_CHANGED,
+  SIGNAL_CONNECTED_CHANGED,
+  SIGNAL_STRENGTH_CHANGED,
+  SIGNAL_DEVICE_CHANGED,
+  SIGNAL_SSID_CHANGED,
+  SIGNAL_MODE_CHANGED,
+  SIGNAL_SECURITY_CHANGED,
+  SIGNAL_PASSPHRASE_CHANGED,
+  SIGNAL_CHANNEL_CHANGED,
+  SIGNAL_FREQUENCY_CHANGED,
+  SIGNAL_PRIORITY_CHANGED,
   SIGNAL_LAST
 };
 
@@ -163,33 +175,39 @@ network_update_property (const gchar *key, GValue *value, CmNetwork *network)
         priv->ssid, priv->ssid_len);
       priv->flags |= NETWORK_INFO_SSID;
     }
+    g_signal_emit (network, network_signals[SIGNAL_SSID_CHANGED], 0);
   }
   else if (!strcmp ("Strength", key))
   {
     priv->strength = g_value_get_uchar (value);
     priv->flags |= NETWORK_INFO_STRENGTH;
+    g_signal_emit (network, network_signals[SIGNAL_STRENGTH_CHANGED], 0);
   }
   else if (!strcmp ("Priority", key))
   {
     priv->priority = g_value_get_uchar (value);
     priv->flags |= NETWORK_INFO_PRIORITY;
+    g_signal_emit (network, network_signals[SIGNAL_PRIORITY_CHANGED], 0);
   }
   else if (!strcmp ("Connected", key))
   {
     priv->connected = g_value_get_boolean (value);
     priv->flags |= NETWORK_INFO_CONNECTED;
+    g_signal_emit (network, network_signals[SIGNAL_CONNECTED_CHANGED], 0);
   }
   else if (!strcmp ("WiFi.Mode", key))
   {
     g_free (priv->mode);
     priv->mode = g_value_dup_string (value);
     priv->flags |= NETWORK_INFO_MODE;
+    g_signal_emit (network, network_signals[SIGNAL_MODE_CHANGED], 0);
   }
   else if (!strcmp ("WiFi.Security", key))
   {
     g_free (priv->security);
     priv->security = g_value_dup_string (value);
     priv->flags |= NETWORK_INFO_SECURITY;
+    g_signal_emit (network, network_signals[SIGNAL_SECURITY_CHANGED], 0);
   }
   else if (!strcmp ("WiFi.Passphrase", key))
   {
@@ -205,33 +223,39 @@ network_update_property (const gchar *key, GValue *value, CmNetwork *network)
       priv->passphrase = NULL;
       priv->flags &= ~NETWORK_INFO_PASSPHRASE;
     }
+    g_signal_emit (network, network_signals[SIGNAL_PASSPHRASE_CHANGED], 0);
   }
   else if (!strcmp ("WiFi.Channel", key))
   {
     priv->channel = g_value_get_uint (value);
     priv->flags |= NETWORK_INFO_CHANNEL;
+    g_signal_emit (network, network_signals[SIGNAL_CHANNEL_CHANGED], 0);
   }
   else if (!strcmp ("Name", key))
   {
     g_free (priv->name);
     priv->name = g_value_dup_string (value);
     priv->flags |= NETWORK_INFO_NAME;
+    g_signal_emit (network, network_signals[SIGNAL_NAME_CHANGED], 0);
   }
   else if (!strcmp ("Address", key))
   {
     g_free (priv->address);
     priv->address = g_value_dup_string (value);
     priv->flags |= NETWORK_INFO_ADDRESS;
+    g_signal_emit (network, network_signals[SIGNAL_ADDRESS_CHANGED], 0);
   }
   else if (!strcmp ("Frequency", key))
   {
     priv->frequency = g_value_get_uint (value);
     priv->flags |= NETWORK_INFO_FREQUENCY;
+    g_signal_emit (network, network_signals[SIGNAL_FREQUENCY_CHANGED], 0);
   }
   else if (!strcmp ("Device", key))
   {
     gchar *path = g_value_get_boxed (value);
     priv->device = cm_manager_find_device (priv->manager, path);
+    g_signal_emit (network, network_signals[SIGNAL_DEVICE_CHANGED], 0);
   }
   else
   {
@@ -663,6 +687,94 @@ network_class_init (CmNetworkClass *klass)
 
   network_signals[SIGNAL_UPDATE] = g_signal_new (
     "network-updated",
+    G_TYPE_FROM_CLASS (gobject_class),
+    G_SIGNAL_RUN_LAST,
+    0,
+    NULL, NULL,
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
+  network_signals[SIGNAL_ADDRESS_CHANGED] = g_signal_new (
+    "address-changed",
+    G_TYPE_FROM_CLASS (gobject_class),
+    G_SIGNAL_RUN_LAST,
+    0,
+    NULL, NULL,
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
+  network_signals[SIGNAL_NAME_CHANGED] = g_signal_new (
+    "name-changed",
+    G_TYPE_FROM_CLASS (gobject_class),
+    G_SIGNAL_RUN_LAST,
+    0,
+    NULL, NULL,
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
+  network_signals[SIGNAL_CONNECTED_CHANGED] = g_signal_new (
+    "connected-changed",
+    G_TYPE_FROM_CLASS (gobject_class),
+    G_SIGNAL_RUN_LAST,
+    0,
+    NULL, NULL,
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
+  network_signals[SIGNAL_STRENGTH_CHANGED] = g_signal_new (
+    "strength-changed",
+    G_TYPE_FROM_CLASS (gobject_class),
+    G_SIGNAL_RUN_LAST,
+    0,
+    NULL, NULL,
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
+  network_signals[SIGNAL_DEVICE_CHANGED] = g_signal_new (
+    "device-changed",
+    G_TYPE_FROM_CLASS (gobject_class),
+    G_SIGNAL_RUN_LAST,
+    0,
+    NULL, NULL,
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
+  network_signals[SIGNAL_SSID_CHANGED] = g_signal_new (
+    "ssid-changed",
+    G_TYPE_FROM_CLASS (gobject_class),
+    G_SIGNAL_RUN_LAST,
+    0,
+    NULL, NULL,
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
+  network_signals[SIGNAL_MODE_CHANGED] = g_signal_new (
+    "mode-changed",
+    G_TYPE_FROM_CLASS (gobject_class),
+    G_SIGNAL_RUN_LAST,
+    0,
+    NULL, NULL,
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
+  network_signals[SIGNAL_SECURITY_CHANGED] = g_signal_new (
+    "security-changed",
+    G_TYPE_FROM_CLASS (gobject_class),
+    G_SIGNAL_RUN_LAST,
+    0,
+    NULL, NULL,
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
+  network_signals[SIGNAL_PASSPHRASE_CHANGED] = g_signal_new (
+    "passphrase-changed",
+    G_TYPE_FROM_CLASS (gobject_class),
+    G_SIGNAL_RUN_LAST,
+    0,
+    NULL, NULL,
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
+  network_signals[SIGNAL_CHANNEL_CHANGED] = g_signal_new (
+    "channel-changed",
+    G_TYPE_FROM_CLASS (gobject_class),
+    G_SIGNAL_RUN_LAST,
+    0,
+    NULL, NULL,
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
+  network_signals[SIGNAL_FREQUENCY_CHANGED] = g_signal_new (
+    "frequency-changed",
     G_TYPE_FROM_CLASS (gobject_class),
     G_SIGNAL_RUN_LAST,
     0,
