@@ -97,6 +97,26 @@ device_emit_updated (CmDevice *device)
   g_signal_emit (device, device_signals[SIGNAL_UPDATE], 0 /* detail */);
 }
 
+CmNetwork *
+cm_device_find_network (CmDevice *device, const gchar *opath)
+{
+  CmDevicePrivate *priv = device->priv;
+  CmNetwork *network = NULL;
+  GList *iter;
+  const gchar *npath;
+
+  for (iter = priv->networks; iter != NULL; iter = iter->next)
+  {
+    network = iter->data;
+    npath = cm_network_get_path (network);
+
+    if (g_strcmp0 (opath, npath) == 0)
+      return network;
+  }
+
+  return NULL;
+}
+
 static void
 device_update_property (const gchar *key, GValue *value, CmDevice *device)
 {
@@ -107,33 +127,58 @@ device_update_property (const gchar *key, GValue *value, CmDevice *device)
   {
     GPtrArray *networks = g_value_get_boxed (value);
     gint i;
-    const gchar *path;
+    const gchar *path = NULL;
+    GList *iter;
 
-    while (priv->networks)
+    /* First remove stale networks */
+    for (iter = priv->networks; iter != NULL; iter = iter->next)
     {
-      g_object_unref (priv->networks->data);
-      priv->networks = g_list_delete_link (priv->networks, priv->networks);
+      CmNetwork *net = iter->data;
+      gboolean found = FALSE;
+
+      for (i = 0; i < networks->len && !found; i++)
+      {
+        path = g_ptr_array_index (networks, i);
+
+        if (g_strcmp0 (path, cm_network_get_path (net)) == 0)
+        {
+          found = TRUE;
+        }
+      }
+
+      /* If net not in networks (found = FALSE) delete form priv->networks */
+      if (!found)
+      {
+        priv->networks = g_list_delete_link (priv->networks, iter);
+      }
     }
 
+    /* iterate networks and add new networks to priv->networks*/
     for (i = 0; i < networks->len; i++)
     {
       path = g_ptr_array_index (networks, i);
       CmNetwork *network;
       GError *error = NULL;
-      network = internal_network_new (priv->proxy, device, path, priv->manager,
-                                      &error);
+
+      network = cm_device_find_network (device, path);
       if (!network)
       {
-        g_debug ("network_new failed in %s: %s\n", __FUNCTION__,
-                 error->message);
-        g_error_free (error);
-        continue;
-      }
-      else
-      {
-	priv->networks = g_list_append (priv->networks, network);
+        network = internal_network_new (priv->proxy, device, path,
+                                        priv->manager, &error);
+        if (!network)
+        {
+          g_debug ("network_new failed in %s: %s", __FUNCTION__,
+                   error->message);
+          g_error_free (error);
+          continue;
+        }
+        else
+        {
+          priv->networks = g_list_append (priv->networks, network);
+        }
       }
     }
+
     g_signal_emit (device, device_signals[SIGNAL_NETWORKS_CHANGED], 0);
   }
   else if (!strcmp ("Scanning", key))
@@ -629,6 +674,7 @@ device_init (CmDevice *self)
   self->priv->name = NULL;
   self->priv->scan_interval = 0;
   self->priv->type = DEVICE_UNKNOWN;
+  self->priv->networks = NULL;
 }
 
 static void
