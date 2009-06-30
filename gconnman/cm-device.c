@@ -71,6 +71,15 @@ static void device_property_change_handler_proxy (DBusGProxy *, const gchar *,
 enum
 {
   SIGNAL_UPDATE,
+  SIGNAL_ADDRESS_CHANGED,
+  SIGNAL_NAME_CHANGED,
+  SIGNAL_TYPE_CHANGED,
+  SIGNAL_INTERFACE_CHANGED,
+  SIGNAL_POWERED_CHANGED,
+  SIGNAL_SCAN_INTERVAL_CHANGED,
+  SIGNAL_SCANNING_CHANGED,
+  SIGNAL_NETWORKS_CHANGED,
+  SIGNAL_METHOD_CHANGED,
   SIGNAL_LAST
 };
 
@@ -125,20 +134,24 @@ device_update_property (const gchar *key, GValue *value, CmDevice *device)
 	priv->networks = g_list_append (priv->networks, network);
       }
     }
+    g_signal_emit (device, device_signals[SIGNAL_NETWORKS_CHANGED], 0);
   }
   else if (!strcmp ("Scanning", key))
   {
     priv->scanning = g_value_get_boolean (value);
+    g_signal_emit (device, device_signals[SIGNAL_SCANNING_CHANGED], 0);
   }
   else if (!strcmp ("Name", key))
   {
     g_free (priv->name);
     priv->name = g_value_dup_string (value);
+    g_signal_emit (device, device_signals[SIGNAL_NAME_CHANGED], 0);
   }
   else if (!strcmp ("Interface", key))
   {
     g_free (priv->iface);
     priv->iface = g_value_dup_string (value);
+    g_signal_emit (device, device_signals[SIGNAL_INTERFACE_CHANGED], 0);
   }
   else if (!strcmp ("Type", key))
   {
@@ -160,24 +173,29 @@ device_update_property (const gchar *key, GValue *value, CmDevice *device)
                cm_device_get_name (device), type);
       priv->type = DEVICE_UNKNOWN;
     }
+    g_signal_emit (device, device_signals[SIGNAL_TYPE_CHANGED], 0);
   }
   else if (!strcmp ("Powered", key))
   {
     priv->powered = g_value_get_boolean (value);
+    g_signal_emit (device, device_signals[SIGNAL_POWERED_CHANGED], 0);
   }
   else if (!strcmp ("IPv4.Method", key))
   {
     g_free (priv->ipv4_method);
     priv->ipv4_method = g_value_dup_string (value);
+    g_signal_emit (device, device_signals[SIGNAL_METHOD_CHANGED], 0);
   }
   else if (!strcmp ("ScanInterval", key))
   {
     priv->scan_interval = g_value_get_uint (value);
+    g_signal_emit (device, device_signals[SIGNAL_SCAN_INTERVAL_CHANGED], 0);
   }
   else if (!strcmp ("Address", key))
   {
     g_free (priv->address);
     priv->address = g_value_dup_string (value);
+    g_signal_emit (device, device_signals[SIGNAL_ADDRESS_CHANGED], 0);
   }
   else
   {
@@ -623,6 +641,78 @@ device_class_init (CmDeviceClass *klass)
 
   device_signals[SIGNAL_UPDATE] = g_signal_new (
     "device-updated",
+    G_TYPE_FROM_CLASS (gobject_class),
+    G_SIGNAL_RUN_LAST,
+    0,
+    NULL, NULL,
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
+  device_signals[SIGNAL_ADDRESS_CHANGED] = g_signal_new (
+    "address-changed",
+    G_TYPE_FROM_CLASS (gobject_class),
+    G_SIGNAL_RUN_LAST,
+    0,
+    NULL, NULL,
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
+  device_signals[SIGNAL_NAME_CHANGED] = g_signal_new (
+    "name-changed",
+    G_TYPE_FROM_CLASS (gobject_class),
+    G_SIGNAL_RUN_LAST,
+    0,
+    NULL, NULL,
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
+  device_signals[SIGNAL_TYPE_CHANGED] = g_signal_new (
+    "type-changed",
+    G_TYPE_FROM_CLASS (gobject_class),
+    G_SIGNAL_RUN_LAST,
+    0,
+    NULL, NULL,
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
+  device_signals[SIGNAL_INTERFACE_CHANGED] = g_signal_new (
+    "interface-changed",
+    G_TYPE_FROM_CLASS (gobject_class),
+    G_SIGNAL_RUN_LAST,
+    0,
+    NULL, NULL,
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
+  device_signals[SIGNAL_POWERED_CHANGED] = g_signal_new (
+    "powered-changed",
+    G_TYPE_FROM_CLASS (gobject_class),
+    G_SIGNAL_RUN_LAST,
+    0,
+    NULL, NULL,
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
+  device_signals[SIGNAL_SCAN_INTERVAL_CHANGED] = g_signal_new (
+    "scan-interval-changed",
+    G_TYPE_FROM_CLASS (gobject_class),
+    G_SIGNAL_RUN_LAST,
+    0,
+    NULL, NULL,
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
+  device_signals[SIGNAL_SCANNING_CHANGED] = g_signal_new (
+    "scanning-changed",
+    G_TYPE_FROM_CLASS (gobject_class),
+    G_SIGNAL_RUN_LAST,
+    0,
+    NULL, NULL,
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
+  device_signals[SIGNAL_NETWORKS_CHANGED] = g_signal_new (
+    "networks-changed",
+    G_TYPE_FROM_CLASS (gobject_class),
+    G_SIGNAL_RUN_LAST,
+    0,
+    NULL, NULL,
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
+  device_signals[SIGNAL_METHOD_CHANGED] = g_signal_new (
+    "method-changed",
     G_TYPE_FROM_CLASS (gobject_class),
     G_SIGNAL_RUN_LAST,
     0,
