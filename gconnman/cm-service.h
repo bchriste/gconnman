@@ -79,6 +79,7 @@ typedef enum
   SERVICE_INFO_STRENGTH   = 1 << 6,
   SERVICE_INFO_FAVORITE   = 1 << 7,
   SERVICE_INFO_ERROR      = 1 << 8,
+  SERVICE_INFO_METHOD     = 1 << 9,
 } CmServiceInfoMask;
 
 /* methods */
