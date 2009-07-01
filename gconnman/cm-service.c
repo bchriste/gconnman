@@ -50,6 +50,7 @@ struct _CmServicePrivate
   gint order;
   gboolean favorite;
   gchar *error;
+  gchar *method;
 
   gboolean connected;
   CmServiceInfoMask flags;
@@ -69,6 +70,7 @@ enum
   SIGNAL_STRENGTH_CHANGED,
   SIGNAL_FAVORITE_CHANGED,
   SIGNAL_ERROR_CHANGED,
+  SIGNAL_METHOD_CHANGED,
   SIGNAL_LAST
 };
 
@@ -172,6 +174,14 @@ service_update_property (const gchar *key, GValue *value, CmService *service)
     priv->flags |= SERVICE_INFO_ERROR;
     g_signal_emit (service, service_signals[SIGNAL_ERROR_CHANGED], 0,
                    priv->error);
+  }
+  else if (!strcmp ("IPv4.Method", key))
+  {
+    g_free (priv->method);
+    priv->method = g_value_dup_string (value);
+    priv->flags |= SERVICE_INFO_METHOD;
+    g_signal_emit (service, service_signals[SIGNAL_METHOD_CHANGED], 0,
+                   priv->method);
   }
   else
   {
@@ -652,6 +662,14 @@ cm_service_get_path (CmService *service)
   return priv->path;
 }
 
+const gchar *
+cm_service_get_method (CmService *service)
+{
+  CmServicePrivate *priv = service->priv;
+
+  return priv->method;
+}
+
 gboolean
 cm_service_make_default (CmService *service)
 {
@@ -720,6 +738,7 @@ service_finalize (GObject *object)
   g_free (priv->path);
   g_free (priv->passphrase);
   g_free (priv->error);
+  g_free (priv->method);
 
   G_OBJECT_CLASS (service_parent_class)->finalize (object);
 }
@@ -739,6 +758,7 @@ service_init (CmService *self)
   self->priv->favorite = FALSE;
   self->priv->connected = FALSE;
   self->priv->error = NULL;
+  self->priv->method = NULL;
 }
 
 static void
@@ -839,6 +859,16 @@ service_class_init (CmServiceClass *klass)
     G_TYPE_BOOLEAN);
   service_signals[SIGNAL_ERROR_CHANGED] = g_signal_new (
     "error-changed",
+    G_TYPE_FROM_CLASS (gobject_class),
+    G_SIGNAL_RUN_LAST,
+    0,
+    NULL, NULL,
+    g_cclosure_marshal_VOID__STRING,
+    G_TYPE_NONE,
+    1,
+    G_TYPE_STRING);
+  service_signals[SIGNAL_METHOD_CHANGED] = g_signal_new (
+    "method-changed",
     G_TYPE_FROM_CLASS (gobject_class),
     G_SIGNAL_RUN_LAST,
     0,
