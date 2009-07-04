@@ -113,7 +113,7 @@ connection_update_property (const gchar *key, GValue *value, CmConnection *conne
   }
   else if (!strcmp ("Strength", key))
   {
-    priv->strength= g_value_get_uint (value);
+    priv->strength= g_value_get_uchar (value);
     g_signal_emit (connection, connection_signals[SIGNAL_STRENGTH_CHANGED], 0);
   }
   else if (!strcmp ("Default", key))
