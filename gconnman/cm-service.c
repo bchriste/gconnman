@@ -481,8 +481,10 @@ cm_service_move_before (CmService *service, CmService *before)
   DBusGProxyCall *call;
 
   call = dbus_g_proxy_begin_call (priv->proxy, "MoveBefore",
-                                  service_move_before_call_notify, service,
-                                  NULL, G_TYPE_STRING, path, G_TYPE_INVALID);
+                                  service_move_before_call_notify,
+                                  service, NULL,
+                                  DBUS_TYPE_G_OBJECT_PATH, path,
+                                  G_TYPE_INVALID);
 
   if (!call)
   {
@@ -518,8 +520,10 @@ cm_service_move_after (CmService *service, CmService *after)
   DBusGProxyCall *call;
 
   call = dbus_g_proxy_begin_call (priv->proxy, "MoveAfter",
-                                  service_move_after_call_notify, service, NULL,
-                                  G_TYPE_STRING, path, G_TYPE_INVALID);
+                                  service_move_after_call_notify,
+                                  service, NULL,
+                                  DBUS_TYPE_G_OBJECT_PATH, path,
+                                  G_TYPE_INVALID);
 
   if (!call)
   {
