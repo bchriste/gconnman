@@ -3,7 +3,7 @@ AC_PREREQ(2.61)
 # package version number (not shared library version)
 m4_define(gconnman_version_major, 0)
 m4_define(gconnman_version_minor, 1)
-m4_define(gconnman_version_micro, 18)
+m4_define(gconnman_version_micro, 19)
 
 m4_define([gconnman_version],
           [gconnman_version_major.gconnman_version_minor.gconnman_version_micro])
