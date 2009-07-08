@@ -1,4 +1,4 @@
-bin_PROGRAMS = sample
+noinst_PROGRAMS = sample
 sample_SOURCES = sample.c
 INCLUDES = @SAMPLE_CFLAGS@
 LIBS = @SAMPLE_LIBS@
