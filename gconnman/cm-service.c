@@ -386,9 +386,9 @@ service_remove_call_notify (DBusGProxy *proxy,
   CmServicePrivate *priv = service->priv;
   GError *error = NULL;
 
-  /* Clear the local passphrase */
+  /* Clear the local passphrase, should possibly wait until daemon signals? */
   g_free (priv->passphrase);
-  priv->passphrase = g_strdup ("");
+  priv->passphrase = NULL;
 
   if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
   {
