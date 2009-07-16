@@ -145,13 +145,16 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
     GPtrArray *devices = g_value_get_boxed (value);
     gint i;
     const gchar *path = NULL;
-    GList *iter;
+    GList *curr, *next;
 
     /* First remove stale devices */
-    for (iter = priv->devices; iter != NULL; iter = iter->next)
+    curr = priv->devices;
+    while (curr != NULL)
     {
-      CmDevice *dev = iter->data;
+      CmDevice *dev = CM_DEVICE (curr->data);
       gboolean found = FALSE;
+
+      next = curr->next;
 
       for (i = 0; i < devices->len && !found; i++)
       {
@@ -166,8 +169,10 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
       /* device not in retrieved list, delete from our list */
       if (!found)
       {
-        priv->devices = g_list_delete_link (priv->devices, iter);
+        priv->devices = g_list_delete_link (priv->devices, curr);
       }
+
+      curr = next;
     }
 
     /* iterate retrieved list, add any new items to our list */
