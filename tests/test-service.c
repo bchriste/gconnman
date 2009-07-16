@@ -28,6 +28,24 @@ _service_state_changed_cb (CmService *service,
 }
 
 void
+_strength_changed_cb (CmService *service,
+                      gpointer   user_data)
+{
+  g_debug ("Service strength changed on %s, it's now %i",
+           cm_service_get_name (service),
+           cm_service_get_strength (service));
+}
+
+void
+_security_changed_cb (CmService *service,
+                      gpointer   user_data)
+{
+  g_debug ("Service security changed on %s, now using \"%s\" security",
+           cm_service_get_name (service),
+           cm_service_get_security (service));
+}
+
+void
 _service_updated_cb (CmService *service,
                      gpointer user_data)
 {
@@ -64,6 +82,14 @@ _services_changed_cb (CmManager *manager,
       g_signal_connect (G_OBJECT (service),
                         "service-updated",
                         G_CALLBACK (_service_updated_cb),
+                        NULL);
+      g_signal_connect (G_OBJECT (service),
+                        "strength-changed",
+                        G_CALLBACK (_strength_changed_cb),
+                        NULL);
+      g_signal_connect (G_OBJECT (service),
+                        "security-changed",
+                        G_CALLBACK (_security_changed_cb),
                         NULL);
     }
   }
