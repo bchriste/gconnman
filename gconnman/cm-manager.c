@@ -202,13 +202,16 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
     GPtrArray *connections = g_value_get_boxed (value);
     gint i;
     const gchar *path = NULL;
-    GList *iter;
+    GList *curr, *next;
 
     /* First remove stale connections */
-    for (iter = priv->connections; iter != NULL; iter = iter->next)
+    curr = priv->connections;
+    while (curr != NULL)
     {
-      CmConnection *con = iter->data;
+      CmConnection *con = CM_CONNECTION (curr->data);
       gboolean found = FALSE;
+
+      next = curr->next;
 
       for (i = 0; i < connections->len && !found; i++)
       {
@@ -223,8 +226,10 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
       /* connection not in retrieved list, delete from our list */
       if (!found)
       {
-        priv->connections = g_list_delete_link (priv->connections, iter);
+        priv->connections = g_list_delete_link (priv->connections, curr);
       }
+
+      curr = next;
     }
 
     /* iterate retrieved list, add any new items to our list */
@@ -260,13 +265,16 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
     GPtrArray *services = g_value_get_boxed (value);
     gint i;
     const gchar *path = NULL;
-    GList *iter;
+    GList *curr, *next;
 
     /* First remove stale services */
-    for (iter = priv->services; iter != NULL; iter = iter->next)
+    curr = priv->services;
+    while (curr != NULL)
     {
-      CmService *serv = iter->data;
+      CmService *serv = CM_SERVICE (curr->data);
       gboolean found = FALSE;
+
+      next = curr->next;
 
       for (i = 0; i < services->len && !found; i++)
       {
@@ -281,8 +289,10 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
       /* service not in retrieved list, delete from our list */
       if (!found)
       {
-        priv->services = g_list_delete_link (priv->services, iter);
+        priv->services = g_list_delete_link (priv->services, curr);
       }
+
+      curr = next;
     }
 
     /* iterate retrieved list, add any new items to our list */
