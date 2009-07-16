@@ -604,6 +604,94 @@ cm_manager_request_scan_devices (CmManager *manager,
   return ret;
 }
 
+static void
+_free_g_value (GValue *value)
+{
+  g_value_unset (value);
+  g_slice_free (GValue, value);
+}
+
+static void
+manager_connect_service_notify (DBusGProxy     *proxy,
+                                DBusGProxyCall *call,
+                                gpointer        user_data)
+{
+  GError *error = NULL;
+
+  if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
+  {
+    g_debug ("Error calling dbus_g_proxy_end_call in %s: %s",
+             __FUNCTION__, error->message);
+    g_error_free (error);
+  }
+}
+
+gboolean
+manager_connect_service (CmManager *manager,
+                         GHashTable *dict)
+{
+  CmManagerPrivate *priv = manager->priv;
+  DBusGProxyCall *call;
+
+  call = dbus_g_proxy_begin_call (priv->proxy, "ConnectService",
+                                  manager_connect_service_notify,
+                                  NULL, NULL,
+                                  dbus_g_type_get_map ("GHashTable",
+                                                       G_TYPE_STRING,
+                                                       G_TYPE_VALUE),
+                                  dict, G_TYPE_INVALID);
+
+  if (!call)
+  {
+    g_debug ("Connecting service on manager failed\n");
+    return FALSE;
+  }
+  return TRUE;
+}
+
+gboolean
+cm_manager_connect_wifi (CmManager *manager,
+                         const gchar *ssid,
+                         const gchar *security,
+                         const gchar *passphrase)
+{
+  GHashTable *props;
+  GValue *type_v, *ssid_v, *security_v, *passphrase_v;
+
+  props = g_hash_table_new_full (g_str_hash,
+                                 g_str_equal,
+                                 g_free,
+                                 (GDestroyNotify) _free_g_value);
+
+  type_v = g_slice_new0 (GValue);
+  g_value_init (type_v, G_TYPE_STRING);
+  g_value_set_string (type_v, g_strdup ("wifi"));
+  g_hash_table_insert (props, g_strdup ("Type"), type_v);
+
+  ssid_v = g_slice_new0 (GValue);
+  g_value_init (ssid_v, G_TYPE_STRING);
+  g_value_set_string (ssid_v, g_strdup (ssid));
+  g_hash_table_insert (props, g_strdup ("WiFi.SSID"), ssid_v);
+
+  if (security)
+  {
+    security_v = g_slice_new (GValue);
+    g_value_init (security_v, G_TYPE_STRING);
+    g_value_set_string (security_v, g_strdup (security));
+    g_hash_table_insert (props, g_strdup ("WiFi.Security"), security_v);
+  }
+
+  if (passphrase)
+  {
+    passphrase_v = g_slice_new (GValue);
+    g_value_init (passphrase_v, G_TYPE_STRING);
+    g_value_set_string (passphrase_v, g_strdup (passphrase));
+    g_hash_table_insert (props, g_strdup ("WiFi.Passphrase"), passphrase_v);
+  }
+
+  return manager_connect_service (manager, props);
+}
+
 const GList *
 cm_manager_get_devices (CmManager *manager)
 {

@@ -87,6 +87,8 @@ gboolean cm_manager_refresh (CmManager *manager);
 
 gboolean cm_manager_request_scan (CmManager *manager);
 gboolean cm_manager_request_scan_devices (CmManager *manager, CmDeviceType type);
+gboolean cm_manager_connect_wifi (CmManager *manager, const gchar *ssid,
+                                  const gchar *security, const gchar *passphrase);
 
 CmDevice *cm_manager_find_device (CmManager *manager, const gchar *opath);
 CmService *cm_manager_find_service (CmManager *manager, const gchar *opath);
