@@ -85,6 +85,9 @@ gboolean cm_manager_set_policy (CmManager *manager, gchar *policy);
 
 gboolean cm_manager_refresh (CmManager *manager);
 
+gboolean cm_manager_request_scan (CmManager *manager);
+gboolean cm_manager_request_scan_devices (CmManager *manager, CmDeviceType type);
+
 CmDevice *cm_manager_find_device (CmManager *manager, const gchar *opath);
 CmService *cm_manager_find_service (CmManager *manager, const gchar *opath);
 CmConnection *cm_manager_find_connection (CmManager *manager,

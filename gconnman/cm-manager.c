@@ -503,7 +503,7 @@ manager_set_property_call_notify (DBusGProxy *proxy,
 
   if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
   {
-    g_debug ("Error calling dbus_g_proxy_end_call in %s on Manager: %s\n",
+    g_debug ("Error calling dbus_g_proxy_end_call in %s on Manager: %s",
              __FUNCTION__, error->message);
     g_error_free (error);
   }
@@ -529,6 +529,79 @@ manager_set_property (CmManager *manager, const gchar *property, GValue *value)
   }
 
   return TRUE;
+}
+
+static void
+manager_request_scan_call_notify (DBusGProxy *proxy,
+                                  DBusGProxyCall *call,
+                                  gpointer data)
+{
+  GError *error = NULL;
+
+  if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
+  {
+    g_debug ("Error calling dbus_g_proxy_end_call in %s on Manager: %s",
+             __FUNCTION__, error->message);
+    g_error_free (error);
+  }
+}
+
+gboolean
+manager_request_scan (CmManager *manager,
+                      const gchar *technology)
+{
+  CmManagerPrivate *priv = manager->priv;
+  GError *error = NULL;
+  DBusGProxyCall *call;
+
+  call = dbus_g_proxy_begin_call (priv->proxy, "RequestScan",
+                                  manager_request_scan_call_notify, NULL,
+                                  NULL, G_TYPE_STRING, technology,
+                                  G_TYPE_INVALID);
+
+  if (!call)
+  {
+    g_debug ("RequestScan failed %s\n", error ? error->message : "Unknown");
+    g_error_free (error);
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+gboolean
+cm_manager_request_scan (CmManager *manager)
+{
+  return manager_request_scan (manager, "");
+}
+
+gboolean
+cm_manager_request_scan_devices (CmManager *manager,
+                                 CmDeviceType type)
+{
+  gboolean ret;
+
+  switch (type)
+  {
+  case DEVICE_WIFI:
+    ret = manager_request_scan (manager, "wifi");
+    break;
+  case DEVICE_WIMAX:
+    ret = manager_request_scan (manager, "wimax");
+    break;
+  case DEVICE_BLUETOOTH:
+    ret = manager_request_scan (manager, "bluetooth");
+    break;
+  case DEVICE_CELLULAR:
+    ret = manager_request_scan (manager, "cellular");
+    break;
+  case DEVICE_ETHERNET:
+  default:
+    ret = FALSE;
+    break;
+  }
+
+  return ret;
 }
 
 const GList *
