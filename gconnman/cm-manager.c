@@ -690,7 +690,7 @@ cm_manager_connect_wifi (CmManager *manager,
 
   if (security)
   {
-    security_v = g_slice_new (GValue);
+    security_v = g_slice_new0 (GValue);
     g_value_init (security_v, G_TYPE_STRING);
     g_value_set_string (security_v, g_strdup (security));
     g_hash_table_insert (props, g_strdup ("WiFi.Security"), security_v);
@@ -698,7 +698,7 @@ cm_manager_connect_wifi (CmManager *manager,
 
   if (passphrase)
   {
-    passphrase_v = g_slice_new (GValue);
+    passphrase_v = g_slice_new0 (GValue);
     g_value_init (passphrase_v, G_TYPE_STRING);
     g_value_set_string (passphrase_v, g_strdup (passphrase));
     g_hash_table_insert (props, g_strdup ("WiFi.Passphrase"), passphrase_v);
