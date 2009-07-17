@@ -442,6 +442,49 @@ manager_property_change_handler_proxy (DBusGProxy *proxy,
   manager_emit_updated (manager);
 }
 
+static void
+manager_name_owner_changed_cb (DBusGProxy  *proxy,
+                               const gchar *name,
+                               const gchar *previous,
+                               const gchar *new,
+                               gpointer     user_data)
+{
+  CmManager *manager = CM_MANAGER (user_data);
+  CmManagerPrivate *priv = manager->priv;
+
+  if (g_str_equal (name, CONNMAN_SERVICE) == FALSE)
+    return; /* Don't care about non ConnMan events */
+
+  if (!new) /* No new owner, ConnMan gone away? */
+  {
+    /* Tidy up lists and report offline state */
+    while (priv->devices)
+    {
+      g_object_unref (priv->devices->data);
+      priv->devices = g_list_delete_link (priv->devices, priv->devices);
+    }
+    while (priv->connections)
+    {
+      g_object_unref (priv->connections->data);
+      priv->connections = g_list_delete_link (priv->connections,
+                                              priv->connections);
+    }
+    while (priv->services)
+    {
+      g_object_unref (priv->services->data);
+      priv->services = g_list_delete_link (priv->services, priv->services);
+    }
+    g_free (priv->state);
+    priv->state = g_strdup ("unavailable");
+    g_signal_emit (manager, manager_signals[SIGNAL_STATE_CHANGED], 0);
+  }
+  else if (new && g_strcmp0 (new, CONNMAN_SERVICE) == 0)
+  {
+    /* Owner changed, refresh lists */
+    cm_manager_refresh (manager);
+  }
+}
+
 gboolean
 manager_set_dbus_connection (CmManager *manager, GError **error)
 {
@@ -486,6 +529,14 @@ manager_set_dbus_connection (CmManager *manager, GError **error)
     priv->connection = NULL;
     return FALSE;
   }
+
+  dbus_g_proxy_add_signal (priv->proxy, "NameOwnerChanged",
+                           G_TYPE_STRING, G_TYPE_STRING,
+                           G_TYPE_STRING, G_TYPE_INVALID);
+
+  dbus_g_proxy_connect_signal (priv->proxy, "NameOwnerChanged",
+                               G_CALLBACK (manager_name_owner_changed_cb),
+                               manager, NULL);
 
   dbus_g_proxy_add_signal (
     priv->proxy, "PropertyChanged",
