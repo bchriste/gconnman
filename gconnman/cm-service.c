@@ -364,9 +364,18 @@ cm_service_connect (CmService *service)
   if (priv->connected)
     return TRUE;
 
-  call = dbus_g_proxy_begin_call (priv->proxy, "Connect",
-                                  service_connect_call_notify, service, NULL,
-                                  G_TYPE_INVALID);
+  /* 
+   * We use an unusually long timeout since this dbus method
+   * will not return until there is an error or till connman
+   * has an IP address for the connection.
+   */
+  call = dbus_g_proxy_begin_call_with_timeout (priv->proxy, 
+					       "Connect",
+					       service_connect_call_notify, 
+					       service, 
+					       NULL,
+					       30000,
+					       G_TYPE_INVALID);
   if (!call)
   {
     g_debug ("Connect failed: %s\n", error ? error->message : "Unknown");
