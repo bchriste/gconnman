@@ -374,7 +374,7 @@ cm_service_connect (CmService *service)
 					       service_connect_call_notify, 
 					       service, 
 					       NULL,
-					       30000,
+					       120000,
 					       G_TYPE_INVALID);
   if (!call)
   {
