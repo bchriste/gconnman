@@ -321,9 +321,6 @@ cm_service_disconnect (CmService *service)
   GError *error = NULL;
   DBusGProxyCall *call;
 
-  if (!priv->connected)
-    return TRUE;
-
   call = dbus_g_proxy_begin_call (priv->proxy, "Disconnect",
                                   service_disconnect_call_notify, service,
                                   NULL, G_TYPE_INVALID);
