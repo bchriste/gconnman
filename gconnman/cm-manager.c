@@ -44,6 +44,8 @@ struct _CmManagerPrivate
   GList *devices;
   GList *services;
   GList *connections;
+  GList *technologies;
+  GList *enabled_technologies;
   gchar *state;
 };
 
@@ -57,6 +59,8 @@ enum
   SIGNAL_DEVICES_CHANGED,
   SIGNAL_SERVICES_CHANGED,
   SIGNAL_CONNECTIONS_CHANGED,
+  SIGNAL_TECHNOLOGIES_CHANGED,
+  SIGNAL_ENABLED_TECHNOLOGIES_CHANGED,
   SIGNAL_LAST
 };
 
@@ -354,6 +358,56 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
     priv->state = g_value_dup_string (value);
     g_signal_emit (manager, manager_signals[SIGNAL_STATE_CHANGED], 0);
   }
+  else if (!strcmp ("Technologies", key))
+  {
+    gchar **v = g_value_get_boxed (value);
+    gint i;
+    GList *curr, *next;
+
+    /* cleanup existnig list */
+    curr = priv->technologies;
+    while (curr)
+    {
+      next = curr->next;
+      g_free (curr->data);
+      priv->technologies = g_list_delete_link (priv->technologies, 
+					       curr);
+      curr = next;
+    }
+
+    for (i = 0; i < g_strv_length(v); i++)
+    {
+      priv->technologies = g_list_prepend (priv->technologies, 
+					   g_strdup (*(v + i)));
+    }
+
+    g_signal_emit (manager, manager_signals[SIGNAL_TECHNOLOGIES_CHANGED], 0);
+  }
+  else if (!strcmp ("EnabledTechnologies", key))
+  {
+    gchar **v = g_value_get_boxed (value);
+    gint i;
+    GList *curr, *next;
+
+    /* cleanup existnig list */
+    curr = priv->enabled_technologies;
+    while (curr)
+    {
+      next = curr->next;
+      g_free (curr->data);
+      priv->enabled_technologies = g_list_delete_link (priv->enabled_technologies, 
+						       curr);
+      curr = next;
+    }
+
+    for (i = 0; i < g_strv_length(v); i++)
+    {
+      priv->enabled_technologies = g_list_prepend (priv->enabled_technologies, 
+						   g_strdup (*(v + i)));
+    }
+
+    g_signal_emit (manager, manager_signals[SIGNAL_ENABLED_TECHNOLOGIES_CHANGED], 0);
+  }
   else
   {
     tmp = g_strdup_value_contents (value);
@@ -612,6 +666,21 @@ manager_request_scan_call_notify (DBusGProxy *proxy,
   }
 }
 
+static void
+manager_generic_call_notify (DBusGProxy *proxy,
+			     DBusGProxyCall *call,
+			     gpointer data)
+{
+  GError *error = NULL;
+
+  if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
+  {
+    g_debug ("Error calling dbus_g_proxy_end_call in %s on Manager: %s",
+             __FUNCTION__, error->message);
+    g_error_free (error);
+  }
+}
+
 gboolean
 manager_request_scan (CmManager *manager,
                       const gchar *technology)
@@ -758,6 +827,56 @@ cm_manager_connect_wifi (CmManager *manager,
   return manager_connect_service (manager, props);
 }
 
+gboolean
+cm_manager_enable_technology (CmManager *manager,
+			      const gchar *technology)
+{
+  CmManagerPrivate *priv = manager->priv;
+  GError *error = NULL;
+  DBusGProxyCall *call;
+
+  call = dbus_g_proxy_begin_call (priv->proxy, 
+				  "EnableTechnology",
+                                  manager_generic_call_notify, 
+				  NULL, NULL, G_TYPE_STRING, 
+				  technology, G_TYPE_INVALID);
+
+  if (!call)
+  {
+    g_debug ("EnableTechnology failed %s\n", 
+	     error ? error->message : "Unknown");
+    g_error_free (error);
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+gboolean
+cm_manager_disable_technology (CmManager *manager,
+			       const gchar *technology)
+{
+  CmManagerPrivate *priv = manager->priv;
+  GError *error = NULL;
+  DBusGProxyCall *call;
+
+  call = dbus_g_proxy_begin_call (priv->proxy, 
+				  "DisableTechnology",
+                                  manager_generic_call_notify, 
+				  NULL, NULL, G_TYPE_STRING, technology,
+                                  G_TYPE_INVALID);
+
+  if (!call)
+  {
+    g_debug ("DisableTechnology failed %s\n", 
+	     error ? error->message : "Unknown");
+    g_error_free (error);
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
 const GList *
 cm_manager_get_devices (CmManager *manager)
 {
@@ -777,6 +896,20 @@ cm_manager_get_services (CmManager *manager)
 {
   CmManagerPrivate *priv = manager->priv;
   return priv->services;
+}
+
+const GList *
+cm_manager_get_technologies (CmManager *manager)
+{
+  CmManagerPrivate *priv = manager->priv;
+  return priv->technologies;
+}
+
+const GList *
+cm_manager_get_enabled_technologies (CmManager *manager)
+{
+  CmManagerPrivate *priv = manager->priv;
+  return priv->enabled_technologies;
 }
 
 gboolean
@@ -977,6 +1110,22 @@ manager_class_init (CmManagerClass *klass)
     G_TYPE_NONE, 0);
   manager_signals[SIGNAL_SERVICES_CHANGED] = g_signal_new (
     "services-changed",
+    G_TYPE_FROM_CLASS (gobject_class),
+    G_SIGNAL_RUN_LAST,
+    0,
+    NULL, NULL,
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
+  manager_signals[SIGNAL_TECHNOLOGIES_CHANGED] = g_signal_new (
+    "technologies-changed",
+    G_TYPE_FROM_CLASS (gobject_class),
+    G_SIGNAL_RUN_LAST,
+    0,
+    NULL, NULL,
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
+  manager_signals[SIGNAL_ENABLED_TECHNOLOGIES_CHANGED] = g_signal_new (
+    "enabled-technologies-changed",
     G_TYPE_FROM_CLASS (gobject_class),
     G_SIGNAL_RUN_LAST,
     0,

@@ -75,6 +75,8 @@ CmManager *cm_manager_new (GError **error);
 const GList *cm_manager_get_devices (CmManager *manager);
 const GList *cm_manager_get_connections (CmManager *manager);
 const GList *cm_manager_get_services (CmManager *manager);
+const GList *cm_manager_get_technologies (CmManager *manager);
+const GList *cm_manager_get_enabled_technologies (CmManager *manager);
 gboolean cm_manager_get_offline_mode (CmManager *manager);
 gboolean cm_manager_set_offline_mode (CmManager *manager, gboolean offline);
 const gchar *cm_manager_get_state (CmManager *manager);
@@ -89,7 +91,10 @@ gboolean cm_manager_request_scan (CmManager *manager);
 gboolean cm_manager_request_scan_devices (CmManager *manager, CmDeviceType type);
 gboolean cm_manager_connect_wifi (CmManager *manager, const gchar *ssid,
                                   const gchar *security, const gchar *passphrase);
-
+gboolean cm_manager_enable_technology (CmManager *manager, 
+				       const gchar *technology);
+gboolean cm_manager_disable_technology (CmManager *manager, 
+					const gchar *technology);
 CmDevice *cm_manager_find_device (CmManager *manager, const gchar *opath);
 CmService *cm_manager_find_service (CmManager *manager, const gchar *opath);
 CmConnection *cm_manager_find_connection (CmManager *manager,
