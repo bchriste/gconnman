@@ -44,7 +44,8 @@ struct _CmManagerPrivate
   GList *devices;
   GList *services;
   GList *connections;
-  GList *technologies;
+  GList *available_technologies;
+  GList *connected_technologies;
   GList *enabled_technologies;
   gchar *state;
 };
@@ -59,7 +60,8 @@ enum
   SIGNAL_DEVICES_CHANGED,
   SIGNAL_SERVICES_CHANGED,
   SIGNAL_CONNECTIONS_CHANGED,
-  SIGNAL_TECHNOLOGIES_CHANGED,
+  SIGNAL_AVAILABLE_TECHNOLOGIES_CHANGED,
+  SIGNAL_CONNECTED_TECHNOLOGIES_CHANGED,
   SIGNAL_ENABLED_TECHNOLOGIES_CHANGED,
   SIGNAL_LAST
 };
@@ -344,7 +346,7 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
   }
   else if (!strcmp ("ActiveProfile", key))
   {
-    gchar *profile = g_value_get_boxed (value);
+    // gchar *profile = g_value_get_boxed (value);
     /* FIXME: Finish this property */
   }
   else if (!strcmp ("OfflineMode", key))
@@ -358,30 +360,63 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
     priv->state = g_value_dup_string (value);
     g_signal_emit (manager, manager_signals[SIGNAL_STATE_CHANGED], 0);
   }
-  else if (!strcmp ("Technologies", key))
+  else if (!strcmp ("AvailableTechnologies", key))
   {
     gchar **v = g_value_get_boxed (value);
     gint i;
     GList *curr, *next;
 
     /* cleanup existnig list */
-    curr = priv->technologies;
+    curr = priv->available_technologies;
     while (curr)
     {
       next = curr->next;
       g_free (curr->data);
-      priv->technologies = g_list_delete_link (priv->technologies, 
-					       curr);
+      priv->available_technologies = 
+	      g_list_delete_link (priv->available_technologies, 
+				  curr);
       curr = next;
     }
 
     for (i = 0; i < g_strv_length(v); i++)
     {
-      priv->technologies = g_list_prepend (priv->technologies, 
-					   g_strdup (*(v + i)));
+      priv->available_technologies = 
+	      g_list_prepend (priv->available_technologies, 
+			      g_strdup (*(v + i)));
     }
 
-    g_signal_emit (manager, manager_signals[SIGNAL_TECHNOLOGIES_CHANGED], 0);
+    g_signal_emit (manager, 
+		   manager_signals[SIGNAL_AVAILABLE_TECHNOLOGIES_CHANGED], 
+		   0);
+  }
+  else if (!strcmp ("ConnectedTechnologies", key))
+  {
+    gchar **v = g_value_get_boxed (value);
+    gint i;
+    GList *curr, *next;
+
+    /* cleanup existnig list */
+    curr = priv->connected_technologies;
+    while (curr)
+    {
+      next = curr->next;
+      g_free (curr->data);
+      priv->connected_technologies = 
+	      g_list_delete_link (priv->connected_technologies, 
+				  curr);
+      curr = next;
+    }
+
+    for (i = 0; i < g_strv_length(v); i++)
+    {
+      priv->connected_technologies = 
+	      g_list_prepend (priv->connected_technologies, 
+			      g_strdup (*(v + i)));
+    }
+
+    g_signal_emit (manager, 
+		   manager_signals[SIGNAL_CONNECTED_TECHNOLOGIES_CHANGED], 
+		   0);
   }
   else if (!strcmp ("EnabledTechnologies", key))
   {
@@ -395,18 +430,22 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
     {
       next = curr->next;
       g_free (curr->data);
-      priv->enabled_technologies = g_list_delete_link (priv->enabled_technologies, 
-						       curr);
+      priv->enabled_technologies = 
+	g_list_delete_link (priv->enabled_technologies, 
+			    curr);
       curr = next;
     }
 
     for (i = 0; i < g_strv_length(v); i++)
     {
-      priv->enabled_technologies = g_list_prepend (priv->enabled_technologies, 
-						   g_strdup (*(v + i)));
+      priv->enabled_technologies = 
+	g_list_prepend (priv->enabled_technologies, 
+			g_strdup (*(v + i)));
     }
 
-    g_signal_emit (manager, manager_signals[SIGNAL_ENABLED_TECHNOLOGIES_CHANGED], 0);
+    g_signal_emit (manager, 
+		   manager_signals[SIGNAL_ENABLED_TECHNOLOGIES_CHANGED], 
+		   0);
   }
   else
   {
@@ -899,10 +938,17 @@ cm_manager_get_services (CmManager *manager)
 }
 
 const GList *
-cm_manager_get_technologies (CmManager *manager)
+cm_manager_get_available_technologies (CmManager *manager)
 {
   CmManagerPrivate *priv = manager->priv;
-  return priv->technologies;
+  return priv->available_technologies;
+}
+
+const GList *
+cm_manager_get_connected_technologies (CmManager *manager)
+{
+  CmManagerPrivate *priv = manager->priv;
+  return priv->connected_technologies;
 }
 
 const GList *
@@ -1116,8 +1162,16 @@ manager_class_init (CmManagerClass *klass)
     NULL, NULL,
     g_cclosure_marshal_VOID__VOID,
     G_TYPE_NONE, 0);
-  manager_signals[SIGNAL_TECHNOLOGIES_CHANGED] = g_signal_new (
-    "technologies-changed",
+  manager_signals[SIGNAL_AVAILABLE_TECHNOLOGIES_CHANGED] = g_signal_new (
+    "available-technologies-changed",
+    G_TYPE_FROM_CLASS (gobject_class),
+    G_SIGNAL_RUN_LAST,
+    0,
+    NULL, NULL,
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
+  manager_signals[SIGNAL_CONNECTED_TECHNOLOGIES_CHANGED] = g_signal_new (
+    "connected-technologies-changed",
     G_TYPE_FROM_CLASS (gobject_class),
     G_SIGNAL_RUN_LAST,
     0,
