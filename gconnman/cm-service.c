@@ -601,18 +601,36 @@ const gchar *
 cm_service_get_passphrase (CmService *service)
 {
   CmServicePrivate *priv = service->priv;
+  DBusGProxyCall *call;
+
+  call = dbus_g_proxy_begin_call (priv->proxy, "GetProperties",
+                                  service_get_properties_call_notify, service,
+                                  NULL, G_TYPE_INVALID);
+  if (!call)
+  {
+    g_debug ("GetProperties refresh failed in %s", __FUNCTION__);
+  }
+
   return priv->passphrase;
 }
 
 gboolean
 cm_service_set_passphrase (CmService *service, const gchar *passphrase)
 {
+  CmServicePrivate *priv = service->priv;
   GValue value = { 0 };
   gboolean ret;
 
   g_value_init (&value, G_TYPE_STRING);
   g_value_set_static_string (&value, passphrase);
   ret = cm_service_set_property (service, "Passphrase", &value);
+
+  if (ret)
+  {
+    g_free (priv->passphrase);
+    priv->passphrase = g_strdup (passphrase);
+  }
+
   g_value_unset (&value);
 
   return ret;
