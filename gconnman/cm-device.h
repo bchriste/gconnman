@@ -92,8 +92,6 @@ gchar *cm_device_get_address (CmDevice *device);
 gboolean cm_device_set_scan_interval (CmDevice *device, guint interval);
 
 gboolean cm_device_scan (CmDevice *device);
-gboolean cm_device_join_network (CmDevice *device, const gchar *ssid,
-                                 const gchar *security, const gchar *passphrase);
 
 G_END_DECLS
 
