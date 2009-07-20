@@ -110,78 +110,68 @@ service_update_property (const gchar *key, GValue *value, CmService *service)
     {
       priv->connected = FALSE;
     }
-    g_signal_emit (service, service_signals[SIGNAL_STATE_CHANGED], 0,
-                   priv->state);
+    g_signal_emit (service, service_signals[SIGNAL_STATE_CHANGED], 0);
   }
   else if (!strcmp ("Name", key))
   {
     g_free (priv->name);
     priv->name = g_value_dup_string (value);
     priv->flags |= SERVICE_INFO_NAME;
-    g_signal_emit (service, service_signals[SIGNAL_NAME_CHANGED], 0,
-                   priv->name);
+    g_signal_emit (service, service_signals[SIGNAL_NAME_CHANGED], 0);
   }
   else if (!strcmp ("Type", key))
   {
     g_free (priv->type);
     priv->type = g_value_dup_string (value);
     priv->flags |= SERVICE_INFO_TYPE;
-    g_signal_emit (service, service_signals[SIGNAL_TYPE_CHANGED], 0,
-                   priv->type);
+    g_signal_emit (service, service_signals[SIGNAL_TYPE_CHANGED], 0);
   }
   else if (!strcmp ("Mode", key))
   {
     g_free (priv->mode);
     priv->mode = g_value_dup_string (value);
     priv->flags |= SERVICE_INFO_MODE;
-    g_signal_emit (service, service_signals[SIGNAL_MODE_CHANGED], 0,
-                   priv->mode);
+    g_signal_emit (service, service_signals[SIGNAL_MODE_CHANGED], 0);
   }
   else if (!strcmp ("Security", key))
   {
     g_free (priv->security);
     priv->security = g_value_dup_string (value);
     priv->flags |= SERVICE_INFO_SECURITY;
-    g_signal_emit (service, service_signals[SIGNAL_SECURITY_CHANGED], 0,
-                   priv->security);
+    g_signal_emit (service, service_signals[SIGNAL_SECURITY_CHANGED], 0);
   }
   else if (!strcmp ("Passphrase", key))
   {
     g_free (priv->passphrase);
     priv->passphrase = g_value_dup_string (value);
     priv->flags |= SERVICE_INFO_PASSPHRASE;
-    g_signal_emit (service, service_signals[SIGNAL_PASSPHRASE_CHANGED], 0,
-                   priv->passphrase);
+    g_signal_emit (service, service_signals[SIGNAL_PASSPHRASE_CHANGED], 0);
   }
   else if (!strcmp ("Strength", key))
   {
     priv->strength = g_value_get_uchar (value);
     priv->flags |= SERVICE_INFO_STRENGTH;
-    g_signal_emit (service, service_signals[SIGNAL_STRENGTH_CHANGED], 0,
-                   priv->strength);
+    g_signal_emit (service, service_signals[SIGNAL_STRENGTH_CHANGED], 0);
   }
   else if (!strcmp ("Favorite", key))
   {
     priv->favorite = g_value_get_boolean (value);
     priv->flags |= SERVICE_INFO_FAVORITE;
-    g_signal_emit (service, service_signals[SIGNAL_FAVORITE_CHANGED], 0,
-                   priv->favorite);
+    g_signal_emit (service, service_signals[SIGNAL_FAVORITE_CHANGED], 0);
   }
   else if (!strcmp ("Error", key))
   {
     g_free (priv->error);
     priv->error = g_value_dup_string (value);
     priv->flags |= SERVICE_INFO_ERROR;
-    g_signal_emit (service, service_signals[SIGNAL_ERROR_CHANGED], 0,
-                   priv->error);
+    g_signal_emit (service, service_signals[SIGNAL_ERROR_CHANGED], 0);
   }
   else if (!strcmp ("IPv4.Method", key))
   {
     g_free (priv->method);
     priv->method = g_value_dup_string (value);
     priv->flags |= SERVICE_INFO_METHOD;
-    g_signal_emit (service, service_signals[SIGNAL_METHOD_CHANGED], 0,
-                   priv->method);
+    g_signal_emit (service, service_signals[SIGNAL_METHOD_CHANGED], 0);
   }
   else
   {
@@ -799,100 +789,80 @@ service_class_init (CmServiceClass *klass)
     G_SIGNAL_RUN_LAST,
     0,
     NULL, NULL,
-    g_cclosure_marshal_VOID__STRING,
-    G_TYPE_NONE,
-    1,
-    G_TYPE_STRING);
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
   service_signals[SIGNAL_NAME_CHANGED] = g_signal_new (
     "name-changed",
     G_TYPE_FROM_CLASS (gobject_class),
     G_SIGNAL_RUN_LAST,
     0,
     NULL, NULL,
-    g_cclosure_marshal_VOID__STRING,
-    G_TYPE_NONE,
-    1,
-    G_TYPE_STRING);
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
   service_signals[SIGNAL_TYPE_CHANGED] = g_signal_new (
     "type-changed",
     G_TYPE_FROM_CLASS (gobject_class),
     G_SIGNAL_RUN_LAST,
     0,
     NULL, NULL,
-    g_cclosure_marshal_VOID__STRING,
-    G_TYPE_NONE,
-    1,
-    G_TYPE_STRING);
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
   service_signals[SIGNAL_MODE_CHANGED] = g_signal_new (
     "mode-changed",
     G_TYPE_FROM_CLASS (gobject_class),
     G_SIGNAL_RUN_LAST,
     0,
     NULL, NULL,
-    g_cclosure_marshal_VOID__STRING,
-    G_TYPE_NONE,
-    1,
-    G_TYPE_STRING);
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
   service_signals[SIGNAL_SECURITY_CHANGED] = g_signal_new (
     "security-changed",
     G_TYPE_FROM_CLASS (gobject_class),
     G_SIGNAL_RUN_LAST,
     0,
     NULL, NULL,
-    g_cclosure_marshal_VOID__STRING,
-    G_TYPE_NONE,
-    1,
-    G_TYPE_STRING);
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
   service_signals[SIGNAL_PASSPHRASE_CHANGED] = g_signal_new (
     "passphrase-changed",
     G_TYPE_FROM_CLASS (gobject_class),
     G_SIGNAL_RUN_LAST,
     0,
     NULL, NULL,
-    g_cclosure_marshal_VOID__STRING,
-    G_TYPE_NONE,
-    1,
-    G_TYPE_STRING);
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
   service_signals[SIGNAL_STRENGTH_CHANGED] = g_signal_new (
     "strength-changed",
     G_TYPE_FROM_CLASS (gobject_class),
     G_SIGNAL_RUN_LAST,
     0,
     NULL, NULL,
-    g_cclosure_marshal_VOID__UINT,
-    G_TYPE_NONE,
-    1,
-    G_TYPE_UINT);
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
   service_signals[SIGNAL_FAVORITE_CHANGED] = g_signal_new (
     "favorite-changed",
     G_TYPE_FROM_CLASS (gobject_class),
     G_SIGNAL_RUN_LAST,
     0,
     NULL, NULL,
-    g_cclosure_marshal_VOID__BOOLEAN,
-    G_TYPE_NONE,
-    1,
-    G_TYPE_BOOLEAN);
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
   service_signals[SIGNAL_ERROR_CHANGED] = g_signal_new (
     "error-changed",
     G_TYPE_FROM_CLASS (gobject_class),
     G_SIGNAL_RUN_LAST,
     0,
     NULL, NULL,
-    g_cclosure_marshal_VOID__STRING,
-    G_TYPE_NONE,
-    1,
-    G_TYPE_STRING);
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
   service_signals[SIGNAL_METHOD_CHANGED] = g_signal_new (
     "method-changed",
     G_TYPE_FROM_CLASS (gobject_class),
     G_SIGNAL_RUN_LAST,
     0,
     NULL, NULL,
-    g_cclosure_marshal_VOID__STRING,
-    G_TYPE_NONE,
-    1,
-    G_TYPE_STRING);
+    g_cclosure_marshal_VOID__VOID,
+    G_TYPE_NONE, 0);
 
   g_type_class_add_private (gobject_class, sizeof (CmServicePrivate));
 }
