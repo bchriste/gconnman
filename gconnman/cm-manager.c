@@ -447,6 +447,10 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
 		   manager_signals[SIGNAL_ENABLED_TECHNOLOGIES_CHANGED], 
 		   0);
   }
+  else if (!strcmp ("DefaultTechnology", key))
+  {
+    /* FIXME: finish this property */
+  }
   else
   {
     tmp = g_strdup_value_contents (value);
