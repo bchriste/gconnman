@@ -83,10 +83,6 @@ typedef enum
   NETWORK_INFO_CHANNEL    = 1 << 10,
 } CmNetworkInfoMask;
 
-/* methods */
-gboolean cm_network_connect (CmNetwork *network);
-gboolean cm_network_disconnect (CmNetwork *network);
-
 /* const getters */
 gboolean cm_network_is_same (const CmNetwork *network, const gchar *path);
 const gchar *cm_network_get_name (const CmNetwork *network);
