@@ -834,7 +834,7 @@ cm_manager_connect_wifi (CmManager *manager,
                          const gchar *passphrase)
 {
   GHashTable *props;
-  GValue *type_v, *ssid_v, *security_v, *passphrase_v;
+  GValue *type_v, *mode_v, *ssid_v, *security_v, *passphrase_v;
 
   props = g_hash_table_new_full (g_str_hash,
                                  g_str_equal,
@@ -846,17 +846,22 @@ cm_manager_connect_wifi (CmManager *manager,
   g_value_set_string (type_v, g_strdup ("wifi"));
   g_hash_table_insert (props, g_strdup ("Type"), type_v);
 
+  mode_v = g_slice_new0 (GValue);
+  g_value_init (mode_v, G_TYPE_STRING);
+  g_value_set_string (mode_v, g_strdup ("managed"));
+  g_hash_table_insert (props, g_strdup ("Mode"), mode_v);
+
   ssid_v = g_slice_new0 (GValue);
   g_value_init (ssid_v, G_TYPE_STRING);
   g_value_set_string (ssid_v, g_strdup (ssid));
-  g_hash_table_insert (props, g_strdup ("WiFi.SSID"), ssid_v);
+  g_hash_table_insert (props, g_strdup ("SSID"), ssid_v);
 
   if (security)
   {
     security_v = g_slice_new0 (GValue);
     g_value_init (security_v, G_TYPE_STRING);
     g_value_set_string (security_v, g_strdup (security));
-    g_hash_table_insert (props, g_strdup ("WiFi.Security"), security_v);
+    g_hash_table_insert (props, g_strdup ("Security"), security_v);
   }
 
   if (passphrase)
@@ -864,7 +869,7 @@ cm_manager_connect_wifi (CmManager *manager,
     passphrase_v = g_slice_new0 (GValue);
     g_value_init (passphrase_v, G_TYPE_STRING);
     g_value_set_string (passphrase_v, g_strdup (passphrase));
-    g_hash_table_insert (props, g_strdup ("WiFi.Passphrase"), passphrase_v);
+    g_hash_table_insert (props, g_strdup ("Passphrase"), passphrase_v);
   }
 
   return manager_connect_service (manager, props);
