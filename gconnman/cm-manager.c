@@ -366,27 +366,27 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
     gint i;
     GList *curr, *next;
 
-    /* cleanup existnig list */
+    /* cleanup existing list */
     curr = priv->available_technologies;
     while (curr)
     {
       next = curr->next;
       g_free (curr->data);
-      priv->available_technologies = 
-	      g_list_delete_link (priv->available_technologies, 
+      priv->available_technologies =
+	      g_list_delete_link (priv->available_technologies,
 				  curr);
       curr = next;
     }
 
     for (i = 0; i < g_strv_length(v); i++)
     {
-      priv->available_technologies = 
-	      g_list_prepend (priv->available_technologies, 
+      priv->available_technologies =
+	      g_list_prepend (priv->available_technologies,
 			      g_strdup (*(v + i)));
     }
 
-    g_signal_emit (manager, 
-		   manager_signals[SIGNAL_AVAILABLE_TECHNOLOGIES_CHANGED], 
+    g_signal_emit (manager,
+		   manager_signals[SIGNAL_AVAILABLE_TECHNOLOGIES_CHANGED],
 		   0);
   }
   else if (!strcmp ("ConnectedTechnologies", key))
@@ -395,27 +395,27 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
     gint i;
     GList *curr, *next;
 
-    /* cleanup existnig list */
+    /* cleanup existing list */
     curr = priv->connected_technologies;
     while (curr)
     {
       next = curr->next;
       g_free (curr->data);
-      priv->connected_technologies = 
-	      g_list_delete_link (priv->connected_technologies, 
+      priv->connected_technologies =
+	      g_list_delete_link (priv->connected_technologies,
 				  curr);
       curr = next;
     }
 
     for (i = 0; i < g_strv_length(v); i++)
     {
-      priv->connected_technologies = 
-	      g_list_prepend (priv->connected_technologies, 
+      priv->connected_technologies =
+	      g_list_prepend (priv->connected_technologies,
 			      g_strdup (*(v + i)));
     }
 
-    g_signal_emit (manager, 
-		   manager_signals[SIGNAL_CONNECTED_TECHNOLOGIES_CHANGED], 
+    g_signal_emit (manager,
+		   manager_signals[SIGNAL_CONNECTED_TECHNOLOGIES_CHANGED],
 		   0);
   }
   else if (!strcmp ("EnabledTechnologies", key))
@@ -430,21 +430,21 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
     {
       next = curr->next;
       g_free (curr->data);
-      priv->enabled_technologies = 
-	g_list_delete_link (priv->enabled_technologies, 
+      priv->enabled_technologies =
+	g_list_delete_link (priv->enabled_technologies,
 			    curr);
       curr = next;
     }
 
     for (i = 0; i < g_strv_length(v); i++)
     {
-      priv->enabled_technologies = 
-	g_list_prepend (priv->enabled_technologies, 
+      priv->enabled_technologies =
+	g_list_prepend (priv->enabled_technologies,
 			g_strdup (*(v + i)));
     }
 
-    g_signal_emit (manager, 
-		   manager_signals[SIGNAL_ENABLED_TECHNOLOGIES_CHANGED], 
+    g_signal_emit (manager,
+		   manager_signals[SIGNAL_ENABLED_TECHNOLOGIES_CHANGED],
 		   0);
   }
   else if (!strcmp ("DefaultTechnology", key))
