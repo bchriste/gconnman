@@ -21,5 +21,6 @@ MAINTAINERCLEANFILES = \
 	$(srcdir)/install-sh \
 	$(srcdir)/ltmain.sh \
 	$(srcdir)/missing \
+	$(srcdir)/build/autotools/*.m4 \
 	`find "$(srcdir)" -type f -name Makefile.in -print`
 
