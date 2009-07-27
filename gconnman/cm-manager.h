@@ -70,7 +70,7 @@ typedef enum
 #define CONNMAN_MANAGER_INTERFACE	CONNMAN_SERVICE ".Manager"
 #define CONNMAN_MANAGER_PATH		"/"
 
-CmManager *cm_manager_new (GError **error);
+CmManager *cm_manager_new (GError **error, gboolean low_level);
 /* getters */
 const GList *cm_manager_get_devices (CmManager *manager);
 const GList *cm_manager_get_connections (CmManager *manager);

@@ -48,6 +48,7 @@ struct _CmManagerPrivate
   GList *connected_technologies;
   GList *enabled_technologies;
   gchar *state;
+  gboolean low_level;
 };
 
 static void manager_property_change_handler_proxy (DBusGProxy *, const gchar *,
@@ -148,128 +149,132 @@ manager_update_property (const gchar *key, GValue *value, CmManager *manager)
 
   if (!strcmp ("Devices", key))
   {
-    GPtrArray *devices = g_value_get_boxed (value);
-    gint i;
-    const gchar *path = NULL;
-    GList *curr, *next;
-
-    /* First remove stale devices */
-    curr = priv->devices;
-    while (curr != NULL)
+    if (priv->low_level)
     {
-      CmDevice *dev = CM_DEVICE (curr->data);
-      gboolean found = FALSE;
+      GPtrArray *devices = g_value_get_boxed (value);
+      gint i;
+      const gchar *path = NULL;
+      GList *curr, *next;
 
-      next = curr->next;
+      /* First remove stale devices */
+      curr = priv->devices;
+      while (curr != NULL)
+      {
+        CmDevice *dev = CM_DEVICE (curr->data);
+        gboolean found = FALSE;
 
-      for (i = 0; i < devices->len && !found; i++)
+        next = curr->next;
+
+        for (i = 0; i < devices->len && !found; i++)
+        {
+          path = g_ptr_array_index (devices, i);
+
+          if (g_strcmp0 (path, cm_device_get_path (dev)) == 0)
+          {
+            found = TRUE;
+          }
+        }
+
+        /* device not in retrieved list, delete from our list */
+        if (!found)
+        {
+          priv->devices = g_list_delete_link (priv->devices, curr);
+        }
+
+        curr = next;
+      }
+
+      /* iterate retrieved list, add any new items to our list */
+      for (i = 0; i < devices->len; i++)
       {
         path = g_ptr_array_index (devices, i);
+        CmDevice *device;
+        GError *error = NULL;
 
-        if (g_strcmp0 (path, cm_device_get_path (dev)) == 0)
-        {
-          found = TRUE;
-        }
-      }
-
-      /* device not in retrieved list, delete from our list */
-      if (!found)
-      {
-        priv->devices = g_list_delete_link (priv->devices, curr);
-      }
-
-      curr = next;
-    }
-
-    /* iterate retrieved list, add any new items to our list */
-    for (i = 0; i < devices->len; i++)
-    {
-      path = g_ptr_array_index (devices, i);
-      CmDevice *device;
-      GError *error = NULL;
-
-      device = cm_manager_find_device (manager, path);
-      if (!device)
-      {
-        device = internal_device_new (priv->proxy, path, manager, &error);
+        device = cm_manager_find_device (manager, path);
         if (!device)
         {
-          g_debug ("device_new failed in %s: %s\n", __FUNCTION__,
-                   error->message);
-          g_error_free (error);
-          continue;
-        }
-        else
-        {
-          priv->devices = g_list_append (priv->devices, device);
+          device = internal_device_new (priv->proxy, path, manager, &error);
+          if (!device)
+          {
+            g_debug ("device_new failed in %s: %s\n", __FUNCTION__,
+                     error->message);
+            g_error_free (error);
+            continue;
+          }
+          else
+          {
+            priv->devices = g_list_append (priv->devices, device);
+          }
         }
       }
+      g_signal_emit (manager, manager_signals[SIGNAL_DEVICES_CHANGED], 0);
     }
-
-    g_signal_emit (manager, manager_signals[SIGNAL_DEVICES_CHANGED], 0);
   }
   else if (!strcmp ("Connections", key))
   {
-    GPtrArray *connections = g_value_get_boxed (value);
-    gint i;
-    const gchar *path = NULL;
-    GList *curr, *next;
-
-    /* First remove stale connections */
-    curr = priv->connections;
-    while (curr != NULL)
+    if (priv->low_level)
     {
-      CmConnection *con = CM_CONNECTION (curr->data);
-      gboolean found = FALSE;
+      GPtrArray *connections = g_value_get_boxed (value);
+      gint i;
+      const gchar *path = NULL;
+      GList *curr, *next;
 
-      next = curr->next;
+      /* First remove stale connections */
+      curr = priv->connections;
+      while (curr != NULL)
+      {
+        CmConnection *con = CM_CONNECTION (curr->data);
+        gboolean found = FALSE;
 
-      for (i = 0; i < connections->len && !found; i++)
+        next = curr->next;
+
+        for (i = 0; i < connections->len && !found; i++)
+        {
+          path = g_ptr_array_index (connections, i);
+
+          if (g_strcmp0 (path, cm_connection_get_path (con)) == 0)
+          {
+            found = TRUE;
+          }
+        }
+
+        /* connection not in retrieved list, delete from our list */
+        if (!found)
+        {
+          priv->connections = g_list_delete_link (priv->connections, curr);
+        }
+
+        curr = next;
+      }
+
+      /* iterate retrieved list, add any new items to our list */
+      for (i = 0; i < connections->len; i++)
       {
         path = g_ptr_array_index (connections, i);
+        CmConnection *connection;
+        GError *error = NULL;
 
-        if (g_strcmp0 (path, cm_connection_get_path (con)) == 0)
-        {
-          found = TRUE;
-        }
-      }
-
-      /* connection not in retrieved list, delete from our list */
-      if (!found)
-      {
-        priv->connections = g_list_delete_link (priv->connections, curr);
-      }
-
-      curr = next;
-    }
-
-    /* iterate retrieved list, add any new items to our list */
-    for (i = 0; i < connections->len; i++)
-    {
-      path = g_ptr_array_index (connections, i);
-      CmConnection *connection;
-      GError *error = NULL;
-
-      connection = cm_manager_find_connection (manager, path);
-      if (!connection)
-      {
-        connection = internal_connection_new (priv->proxy, path, manager,
-                                              &error);
+        connection = cm_manager_find_connection (manager, path);
         if (!connection)
         {
-          g_debug ("connection_new failed in %s: %s\n", __FUNCTION__,
-                   error->message);
-          g_error_free (error);
-          continue;
-        }
-        else
-        {
-          priv->connections = g_list_append (priv->connections, connection);
+          connection = internal_connection_new (priv->proxy, path, manager,
+                                                &error);
+          if (!connection)
+          {
+            g_debug ("connection_new failed in %s: %s\n", __FUNCTION__,
+                     error->message);
+            g_error_free (error);
+            continue;
+          }
+          else
+          {
+            priv->connections = g_list_append (priv->connections, connection);
+          }
         }
       }
+      g_signal_emit (manager, manager_signals[SIGNAL_CONNECTIONS_CHANGED], 0);
     }
-
-    g_signal_emit (manager, manager_signals[SIGNAL_CONNECTIONS_CHANGED], 0);
   }
   else if (!strcmp ("Services", key))
   {
@@ -648,9 +653,12 @@ manager_set_dbus_connection (CmManager *manager, GError **error)
 }
 
 CmManager *
-cm_manager_new (GError **error)
+cm_manager_new (GError **error, gboolean low_level)
 {
   CmManager *manager = g_object_new (CM_TYPE_MANAGER, NULL);
+  CmManagerPrivate *priv = manager->priv;
+  priv->low_level = low_level;
+
   if (manager_set_dbus_connection (manager, error))
     return manager;
   g_object_unref (manager);
@@ -1113,6 +1121,7 @@ manager_init (CmManager *self)
   self->priv->services = NULL;
   self->priv->devices = NULL;
   self->priv->connections = NULL;
+  self->priv->low_level = FALSE;
 }
 
 static void

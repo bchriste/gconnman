@@ -106,7 +106,7 @@ main (int    argc,
 
   g_type_init ();
 
-  manager = cm_manager_new (&error);
+  manager = cm_manager_new (&error, FALSE);
   if (error)
   {
     g_debug ("Error initialising manager: %s\n",
