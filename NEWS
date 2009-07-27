@@ -1,0 +1,5 @@
+## 0.5.0 - 27th July 2009
+The first significant release as used in Moblin 2.0
+
+Exposes the high-level ConnMan API (Services and Manager interfaces) for use
+in a GObject-like library.
